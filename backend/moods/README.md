@@ -1,16 +1,33 @@
-#MindBridge Backend 
+# MindBridge Backend
 
-Here are the steps to test Django backend and connection the postgres DB
+Django API for mood tracking.
 
-1) create venv & activiate
-    .\.venv\Scripts\activate
-2) install requirements 
-    pip install -r requirements.txt
+## Setup
 
-3) set .env
+1. Create and activate virtual environment:
+   ```bash
+   python -m venv .venv
+   .venv/Scripts/activate   # Windows
+   source .venv/bin/activate   # Mac/Linux
+   ```
 
-4) Commands:
-    python manage.py migrate
-    python manage.py runserver
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-5) test endpoint /api/moods/
+3. Set up `.env` file with database settings.
+
+4. Run migrations:
+   ```bash
+   python manage.py migrate
+   ```
+
+5. Start server:
+   ```bash
+   python manage.py runserver
+   ```
+
+## Test
+
+API endpoint: `/api/moods/`
