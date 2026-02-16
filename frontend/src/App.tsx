@@ -1,17 +1,28 @@
 import { useState } from 'react';
 import { Login } from './components/Login';
+import { SignUp } from './components/SignUp';
 import './App.css';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showSignUp, setShowSignUp] = useState(false);
 
   if (!isLoggedIn) {
+    if (showSignUp) {
+      return (
+        <SignUp
+          onSignUp={() => {
+            setShowSignUp(false);
+            setIsLoggedIn(true);
+          }}
+          onBackToLogin={() => setShowSignUp(false)}
+        />
+      );
+    }
     return (
       <Login
         onLogin={() => setIsLoggedIn(true)}
-        onSignUpClick={() => {
-          // Sign up coming soon
-        }}
+        onSignUpClick={() => setShowSignUp(true)}
       />
     );
   }
