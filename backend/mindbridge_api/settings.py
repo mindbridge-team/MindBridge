@@ -43,6 +43,12 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "moods",
+    "accounts",
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
 ]
 
 MIDDLEWARE = [
@@ -72,6 +78,15 @@ TEMPLATES = [
         },
     },
 ]
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+    ),
+}
 
 WSGI_APPLICATION = 'mindbridge_api.wsgi.application'
 
