@@ -3,6 +3,8 @@ import { Heart, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { register } from '../lib/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SignUpProps {
   onSignUp: () => void;
@@ -10,8 +12,9 @@ interface SignUpProps {
 }
 
 export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
-    fullName: '',
+    username: '',
     email: '',
     birthday: '',
     password: '',
@@ -23,8 +26,8 @@ export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
     }
 
     if (!formData.email.trim()) {
@@ -68,17 +71,23 @@ export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
     e.preventDefault();
     if (!validateForm()) return;
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    setErrors({});
+    try {
+      await register(formData.username, formData.email, formData.password);
+      await login(formData.username, formData.password);
       onSignUp();
-    }, 1500);
+    } catch (err) {
+      setErrors({
+        submit: err instanceof Error ? err.message : 'Registration failed',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
-    }
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
   return (
@@ -105,17 +114,17 @@ export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
 
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="fullName" className="text-sm">Full Name</Label>
+              <Label htmlFor="username" className="text-sm">Username</Label>
               <Input
-                id="fullName"
+                id="username"
                 type="text"
-                placeholder="John Doe"
-                value={formData.fullName}
-                onChange={(e) => handleInputChange('fullName', e.target.value)}
+                placeholder="your_username"
+                value={formData.username}
+                onChange={(e) => handleInputChange('username', e.target.value)}
                 required
-                className={`bg-[#f8fafb] border-border h-9 text-sm ${errors.fullName ? 'border-red-500' : ''}`}
+                className={`bg-[#f8fafb] border-border h-9 text-sm ${errors.username ? 'border-red-500' : ''}`}
               />
-              {errors.fullName && <p className="text-xs text-red-500">{errors.fullName}</p>}
+              {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
             </div>
 
             <div className="space-y-1.5">
@@ -173,6 +182,9 @@ export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
               {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
             </div>
 
+            {errors.submit && (
+              <p className="text-sm text-red-500 bg-red-50 p-2 rounded">{errors.submit}</p>
+            )}
             <div className="text-xs text-muted-foreground">
               <label className="flex items-start gap-2 cursor-pointer">
                 <input type="checkbox" required className="rounded border-border mt-0.5" />

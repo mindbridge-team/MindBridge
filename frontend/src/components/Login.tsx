@@ -5,23 +5,27 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (username: string, password: string) => Promise<void>;
   onSignUpClick: () => void;
 }
 
 export function Login({ onLogin, onSignUpClick }: LoginProps) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    setTimeout(() => {
+    setError('');
+    try {
+      await onLogin(username, password);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
       setIsLoading(false);
-      onLogin();
-    }, 1000);
+    }
   };
 
   return (
@@ -40,18 +44,21 @@ export function Login({ onLogin, onSignUpClick }: LoginProps) {
 
           <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm md:text-base">Email</Label>
+              <Label htmlFor="username" className="text-sm md:text-base">Username</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                placeholder="your_username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 className="bg-[#f8fafb] border-border h-9 md:h-11 text-sm md:text-base"
               />
             </div>
 
+            {error && (
+              <p className="text-sm text-red-500 bg-red-50 p-2 rounded">{error}</p>
+            )}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm md:text-base">Password</Label>
               <Input
