@@ -44,6 +44,9 @@ INSTALLED_APPS = [
     "corsheaders",
     "moods",
     "accounts",
+    "appointments",
+    "resources",
+    "communication"
 ]
 
 CORS_ALLOWED_ORIGINS = [
