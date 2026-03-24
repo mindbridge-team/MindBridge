@@ -9,3 +9,6 @@ psycopg[binary]>=3.1,<4.0
 
 #Optional
 gunicorn>=21.2,<22.0
+
+#Rasa
+requests

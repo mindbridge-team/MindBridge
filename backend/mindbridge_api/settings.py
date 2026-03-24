@@ -29,8 +29,12 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
 
+
 ALLOWED_HOSTS = []
 
+
+#Rasa URL
+RASA_URL = os.getenv("RASA_URL", "http://localhost:5005")
 
 # Application definition
 INSTALLED_APPS = [
@@ -46,7 +50,8 @@ INSTALLED_APPS = [
     "accounts",
     "appointments",
     "resources",
-    "communication"
+    "communication",
+    "chatbot"
 ]
 
 CORS_ALLOWED_ORIGINS = [
