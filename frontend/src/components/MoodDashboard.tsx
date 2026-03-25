@@ -30,6 +30,10 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { getMoods, createMood, type MoodEntry } from '../lib/api';
 import {
+  getDashboardFeaturedResources,
+  type ResourceType,
+} from '../data/resourcesData';
+import {
   LineChart,
   Line,
   XAxis,

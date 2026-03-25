@@ -3,10 +3,13 @@ import type { ReactNode } from 'react';
 import { login as apiLogin } from '../lib/api';
 
 const TOKEN_KEY = 'mindbridge_access_token';
+const REFRESH_KEY = 'mindbridge_refresh_token';
 
 type AuthContextType = {
   isLoggedIn: boolean;
   accessToken: string | null;
+  refreshToken: string | null;
+  persistAccessToken: (token: string) => void;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 };
@@ -17,16 +20,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(() =>
     localStorage.getItem(TOKEN_KEY)
   );
+  const [refreshToken, setRefreshToken] = useState<string | null>(() =>
+    localStorage.getItem(REFRESH_KEY)
+  );
+
+  const persistAccessToken = useCallback((token: string) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    setAccessToken(token);
+  }, []);
 
   const login = useCallback(async (username: string, password: string) => {
-    const { access } = await apiLogin(username, password);
+    const { access, refresh } = await apiLogin(username, password);
     localStorage.setItem(TOKEN_KEY, access);
+    localStorage.setItem(REFRESH_KEY, refresh);
     setAccessToken(access);
+    setRefreshToken(refresh);
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
     setAccessToken(null);
+    setRefreshToken(null);
   }, []);
 
   return (
@@ -34,6 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         isLoggedIn: !!accessToken,
         accessToken,
+        refreshToken,
+        persistAccessToken,
         login,
         logout,
       }}
