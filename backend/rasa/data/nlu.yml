@@ -13,9 +13,32 @@ nlu:
     - hey there
     - let's go
     - hey dude
-    - goodmorning
+    - goodmorning?
     - goodevening
-    - good afternoon
+    - good afternoon?
+    - yo
+    - What's up
+    - how's it going
+
+- intent: out_of_scope
+  examples: |
+    - what's the weather like?
+    - tell me a joke
+    - how old are you?
+    - do you like pizza?
+    - what time is it?
+    - who won the game last night?
+    - do you believe in aliens?
+    - where is the Eiffel Tower?
+    - tell me a story
+    - how tall is Mount Everest?
+    - what's your favorite movie?
+    - translate this to French
+    - how do I code in C++?
+    - can you write my essay?
+    - which car is faster
+    - car brand
+    - should i buy a tesla
 
 - intent: goodbye
   examples: |
