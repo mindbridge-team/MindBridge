@@ -6,6 +6,7 @@ import {
   useRef,
   type FormEvent,
 } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Heart,
   LogOut,
@@ -14,8 +15,9 @@ import {
   MessageCircle,
   BookOpen,
   Users,
-  Wind,
-  Brain,
+  Play,
+  Headphones,
+  Music,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Label } from './ui/label';
@@ -112,6 +114,19 @@ function computeStreak(moods: MoodEntry[]): number {
   return streak;
 }
 
+function getResourceIcon(type: ResourceType) {
+  switch (type) {
+    case 'Article':
+      return BookOpen;
+    case 'Video':
+      return Play;
+    case 'Audio':
+      return Headphones;
+    case 'Music':
+      return Music;
+  }
+}
+
 export function MoodDashboard() {
   const { accessToken, logout } = useAuth();
   const moodSectionRef = useRef<HTMLDivElement>(null);
@@ -131,6 +146,11 @@ export function MoodDashboard() {
         month: 'long',
         day: 'numeric',
       }),
+    []
+  );
+
+  const dashboardFeaturedResources = useMemo(
+    () => getDashboardFeaturedResources(3),
     []
   );
 
@@ -422,55 +442,61 @@ export function MoodDashboard() {
             )}
 
             <div>
-              <h3 className="text-sm md:text-base font-medium mb-3">Wellness resources</h3>
+              <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+                <h3 className="text-sm md:text-base font-medium">Wellness resources</h3>
+                <Link
+                  to="/resources"
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  View all resources
+                </Link>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {[
-                  {
-                    title: 'Managing anxiety',
-                    blurb: 'Learn evidence-based techniques to reduce daily anxiety.',
-                    meta: '5 min read',
-                    icon: BookOpen,
-                    img: 'https://images.unsplash.com/photo-1758876201548-ade1eff8b169?w=1080&q=80&fm=jpg',
-                  },
-                  {
-                    title: 'Breathing exercise',
-                    blurb: '4-7-8 breathing technique for instant calm.',
-                    meta: '3 min practice',
-                    icon: Wind,
-                    img: 'https://images.unsplash.com/photo-1758599879787-03999f72d994?w=1080&q=80&fm=jpg',
-                  },
-                  {
-                    title: 'Guided meditation',
-                    blurb: 'Mindfulness practice for stress relief and focus.',
-                    meta: '10 min audio',
-                    icon: Brain,
-                    img: 'https://images.unsplash.com/photo-1557929878-b358f3bdbdd7?w=1080&q=80&fm=jpg',
-                  },
-                ].map((item) => (
-                  <Card
-                    key={item.title}
-                    className="gap-0 overflow-hidden cursor-default opacity-95 shadow-sm"
-                  >
-                    <div className="relative h-32 md:h-36 overflow-hidden bg-muted">
-                      <img
-                        src={item.img}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                      <div className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                        <item.icon className="h-4 w-4 text-primary" />
-                      </div>
-                    </div>
-                    <CardHeader className="px-3 pt-3 pb-0">
-                      <CardTitle className="text-sm">{item.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-3 pb-3">
-                      <p className="text-xs text-muted-foreground">{item.blurb}</p>
-                      <p className="text-xs text-primary mt-1.5">{item.meta}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                {dashboardFeaturedResources.map((item) => {
+                  const Icon = getResourceIcon(item.type);
+                  return (
+                    <a
+                      key={item.id}
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <Card className="gap-0 overflow-hidden h-full opacity-95 shadow-sm transition-shadow group-hover:shadow-md">
+                        <div className="relative h-32 md:h-36 overflow-hidden bg-muted">
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                          <div className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm">
+                            <Icon className="h-4 w-4 text-primary" aria-hidden />
+                          </div>
+                          <div className="absolute bottom-2 left-2">
+                            <Badge
+                              variant="secondary"
+                              className="bg-black/55 text-white border-0 text-[10px] py-0"
+                            >
+                              {item.type}
+                            </Badge>
+                          </div>
+                        </div>
+                        <CardHeader className="px-3 pt-3 pb-0">
+                          <CardTitle className="text-sm group-hover:text-primary transition-colors">
+                            {item.title}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="px-3 pb-3">
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {item.description}
+                          </p>
+                          <p className="text-xs text-primary mt-1.5">{item.duration}</p>
+                        </CardContent>
+                      </Card>
+                    </a>
+                  );
+                })}
               </div>
             </div>
 
