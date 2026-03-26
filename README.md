@@ -30,3 +30,7 @@ See `backend/moods/README.md` for setup instructions.
 - React + TypeScript + Vite
 - Tailwind CSS
 - Django + PostgreSQL
+
+## Design reference
+
+The dashboard UI is aligned with the **MindBridge Dashboard Design** Figma file: [MindBridge Dashboard Design (Figma)](https://www.figma.com/design/I0vH4dfQ5qi0S66YO0lU66/MindBridge-Dashboard-Design). A sibling export project may live next to this repo as `MindBridge Dashboard Design` (local reference only).
