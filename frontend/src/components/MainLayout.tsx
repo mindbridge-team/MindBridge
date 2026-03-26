@@ -11,38 +11,66 @@ import {
 } from 'lucide-react';
 
 import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
 
-const sidebarNav: {
-  id: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-  to?: string;
-}[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, to: '/' },
-  { id: 'mood', label: 'Mood Tracker', icon: Heart },
-  { id: 'session', label: 'Book Session', icon: Calendar, to: '/appointments/book' },
-  { id: 'resources', label: 'Resources', icon: BookOpen, to: '/resources' },
-  { id: 'community', label: 'Community', icon: Users },
-  { id: 'chatbot', label: 'Chatbot', icon: MessageCircle },
-  { id: 'profile', label: 'Profile', icon: User },
-];
-
-const mobileBottomNav: {
-  id: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-  to?: string;
-}[] = [
-  { id: 'dashboard', label: 'Home', icon: LayoutDashboard, to: '/' },
-  { id: 'mood', label: 'Mood', icon: Heart },
-  { id: 'session', label: 'Book', icon: Calendar, to: '/appointments/book' },
-  { id: 'resources', label: 'Resources', icon: BookOpen, to: '/resources' },
-  { id: 'profile', label: 'Profile', icon: User },
-];
-
 export function MainLayout() {
-  const { logout } = useAuth();
+  const { logout, me } = useAuth();
+  const isCounsellor = me?.role === 'counsellor';
+  const isAdmin = me?.role === 'admin';
+  const isPatient = me?.role === 'patient';
+  const roleBadgeLabel =
+    me?.role === 'admin' ? 'Admin' : me?.role === 'counsellor' ? 'Counsellor' : '';
+
+  const sidebarNav: {
+    id: string;
+    label: string;
+    icon: typeof LayoutDashboard;
+    to?: string;
+  }[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, to: '/' },
+    ...(isPatient ? [{ id: 'mood', label: 'Mood Tracker', icon: Heart } as const] : []),
+    ...(isPatient
+      ? [{ id: 'session', label: 'Book Session', icon: Calendar, to: '/appointments/book' } as const]
+      : []),
+    ...(isCounsellor || isAdmin
+      ? [
+          {
+            id: 'counsellor-appointments',
+            label: 'My Sessions',
+            icon: Calendar,
+            to: '/appointments/counsellor',
+          } as const,
+        ]
+      : []),
+    { id: 'resources', label: 'Resources', icon: BookOpen, to: '/resources' },
+    { id: 'community', label: 'Community', icon: Users },
+    { id: 'chatbot', label: 'Chatbot', icon: MessageCircle },
+    { id: 'profile', label: 'Profile', icon: User },
+  ];
+
+  const mobileBottomNav: {
+    id: string;
+    label: string;
+    icon: typeof LayoutDashboard;
+    to?: string;
+  }[] = [
+    { id: 'dashboard', label: 'Home', icon: LayoutDashboard, to: '/' },
+    ...(isPatient ? [{ id: 'mood', label: 'Mood', icon: Heart } as const] : []),
+    ...(isPatient ? [{ id: 'session', label: 'Book', icon: Calendar, to: '/appointments/book' } as const] : []),
+    ...(isCounsellor || isAdmin
+      ? [
+          {
+            id: 'counsellor-appointments',
+            label: 'Sessions',
+            icon: Calendar,
+            to: '/appointments/counsellor',
+          } as const,
+        ]
+      : []),
+    { id: 'resources', label: 'Resources', icon: BookOpen, to: '/resources' },
+    { id: 'profile', label: 'Profile', icon: User },
+  ];
 
   return (
     <div className="flex h-[100dvh] min-h-0 w-full bg-background">
@@ -58,6 +86,20 @@ export function MainLayout() {
             </div>
             <span className="text-lg font-semibold text-[#2d7a8f]">MindBridge</span>
           </NavLink>
+
+          {me?.username && (
+            <div className="mt-3 flex items-center gap-2">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground leading-none">Signed in as</p>
+                <p className="text-sm font-medium text-foreground truncate">{me.username}</p>
+              </div>
+              {roleBadgeLabel && (
+                <Badge variant="secondary" className="bg-[#e8f4f7] text-[#236272] border-[#cfe7ee]">
+                  {roleBadgeLabel}
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
 
         <nav className="flex-1 p-3 overflow-y-auto">
@@ -132,7 +174,19 @@ export function MainLayout() {
       {/* Main scroll area */}
       <div className="flex-1 flex flex-col min-h-0 min-w-0">
         {/* Mobile: logout (design puts it in sidebar / hamburger; we use a slim top bar) */}
-        <div className="md:hidden sticky top-0 z-30 flex justify-end items-center px-3 py-2.5 bg-white/90 backdrop-blur-sm border-b border-border/60">
+        <div className="md:hidden sticky top-0 z-30 flex justify-between items-center gap-3 px-3 py-2.5 bg-white/90 backdrop-blur-sm border-b border-border/60">
+          {me?.username ? (
+            <div className="min-w-0 flex items-center gap-2">
+              <p className="text-xs font-medium text-foreground truncate">{me.username}</p>
+              {roleBadgeLabel && (
+                <Badge variant="secondary" className="bg-[#e8f4f7] text-[#236272] border-[#cfe7ee]">
+                  {roleBadgeLabel}
+                </Badge>
+              )}
+            </div>
+          ) : (
+            <span />
+          )}
           <Button
             variant="ghost"
             size="sm"

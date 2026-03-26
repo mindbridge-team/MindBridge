@@ -30,7 +30,16 @@ import {
   CardTitle,
 } from './ui/card';
 import { useAuth } from '../contexts/AuthContext';
-import { getMoods, createMood, type MoodEntry } from '../lib/api';
+import {
+  createMood,
+  getCounsellorAppointments,
+  getCounsellors,
+  getMoods,
+  getMyAppointments,
+  type Appointment,
+  type Counsellor,
+  type MoodEntry,
+} from '../lib/api';
 import {
   getDashboardFeaturedResources,
   type ResourceType,
@@ -114,6 +123,28 @@ function computeStreak(moods: MoodEntry[]): number {
   return streak;
 }
 
+function parseApiDate(value: string): Date | null {
+  const raw = value?.trim?.() ?? '';
+  if (!raw) return null;
+  const hasTz = /([zZ]|[+-]\d{2}:\d{2})$/.test(raw);
+  const d = new Date(hasTz ? raw : `${raw}Z`);
+  return Number.isFinite(d.getTime()) ? d : null;
+}
+
+function formatUtcDateTime(value: string): string {
+  const d = parseApiDate(value);
+  if (!d) return value;
+  return d.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'UTC',
+  });
+}
+
 function getResourceIcon(type: ResourceType) {
   switch (type) {
     case 'Article':
@@ -128,15 +159,19 @@ function getResourceIcon(type: ResourceType) {
 }
 
 export function MoodDashboard() {
-  const { accessToken, logout } = useAuth();
+  const { accessToken, refreshToken, persistAccessToken, me, logout } = useAuth();
   const moodSectionRef = useRef<HTMLDivElement>(null);
   const [moods, setMoods] = useState<MoodEntry[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [counsellors, setCounsellors] = useState<Counsellor[]>([]);
   const [moodValue, setMoodValue] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [loadError, setLoadError] = useState('');
+  const [appointmentsError, setAppointmentsError] = useState('');
   const [moodsLoading, setMoodsLoading] = useState(true);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(true);
 
   const todayLine = useMemo(
     () =>
@@ -159,21 +194,77 @@ export function MoodDashboard() {
     setMoodsLoading(true);
     setLoadError('');
     try {
-      const data = await getMoods(accessToken);
+      const data = await getMoods(accessToken, {
+        refreshToken,
+        onAccessToken: persistAccessToken,
+      });
       setMoods(data);
     } catch {
       setLoadError('Failed to load mood history');
     } finally {
       setMoodsLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, refreshToken, persistAccessToken]);
+
+  const fetchAppointments = useCallback(async () => {
+    if (!accessToken || !me) return;
+    setAppointmentsLoading(true);
+    setAppointmentsError('');
+    try {
+      if (me.role === 'patient') {
+        const [apps, cs] = await Promise.all([
+          getMyAppointments(accessToken, { refreshToken, onAccessToken: persistAccessToken }),
+          getCounsellors(accessToken, { refreshToken, onAccessToken: persistAccessToken }),
+        ]);
+        setAppointments(apps);
+        setCounsellors(cs);
+      } else if (me.role === 'counsellor' || me.role === 'admin') {
+        const apps = await getCounsellorAppointments(accessToken, {
+          refreshToken,
+          onAccessToken: persistAccessToken,
+        });
+        setAppointments(apps);
+        setCounsellors([]);
+      } else {
+        setAppointments([]);
+        setCounsellors([]);
+      }
+    } catch (err) {
+      setAppointmentsError(err instanceof Error ? err.message : 'Failed to load appointments');
+      setAppointments([]);
+      setCounsellors([]);
+    } finally {
+      setAppointmentsLoading(false);
+    }
+  }, [accessToken, me, refreshToken, persistAccessToken]);
 
   useEffect(() => {
     fetchMoods();
   }, [fetchMoods]);
 
+  useEffect(() => {
+    void fetchAppointments();
+  }, [fetchAppointments]);
+
   const todaysMood = useMemo(() => getTodaysLatestMood(moods), [moods]);
   const streak = useMemo(() => computeStreak(moods), [moods]);
+
+  const counsellorById = useMemo(() => {
+    const m = new Map<number, Counsellor>();
+    counsellors.forEach((c) => m.set(c.id, c));
+    return m;
+  }, [counsellors]);
+
+  const upcomingAppointments = useMemo(() => {
+    const now = Date.now();
+    return [...appointments]
+      .map((a) => ({ a, t: parseApiDate(a.scheduled_time)?.getTime() ?? Number.POSITIVE_INFINITY }))
+      .filter(({ t }) => t >= now)
+      .sort((x, y) => x.t - y.t)
+      .map(({ a }) => a);
+  }, [appointments]);
+
+  const nextAppointment = upcomingAppointments[0];
 
   const chartData = useMemo(
     () =>
@@ -248,6 +339,12 @@ export function MoodDashboard() {
 
         {moodsLoading && (
           <p className="text-sm text-muted-foreground">Loading mood history…</p>
+        )}
+
+        {appointmentsError && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+            {appointmentsError}
+          </p>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
@@ -343,8 +440,18 @@ export function MoodDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
-                <div className="text-xl font-semibold text-foreground">0</div>
-                <p className="text-xs text-muted-foreground mt-0.5">None scheduled</p>
+                {appointmentsLoading ? (
+                  <p className="text-xs text-muted-foreground">Loading…</p>
+                ) : (
+                  <>
+                    <div className="text-xl font-semibold text-foreground">
+                      {upcomingAppointments.length}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {upcomingAppointments.length === 0 ? 'None scheduled' : 'Scheduled'}
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -388,9 +495,43 @@ export function MoodDashboard() {
                 <CardDescription className="text-xs">Your next appointment</CardDescription>
               </CardHeader>
               <CardContent className="px-4 pb-4 md:px-6 md:pb-6">
-                <p className="text-sm text-muted-foreground py-6 text-center border border-dashed border-border rounded-lg bg-muted/30">
-                  You have no upcoming sessions. Booking will be available here soon.
-                </p>
+                {appointmentsLoading ? (
+                  <p className="text-sm text-muted-foreground py-6 text-center border border-dashed border-border rounded-lg bg-muted/30">
+                    Loading upcoming sessions…
+                  </p>
+                ) : nextAppointment ? (
+                  <div className="border border-border rounded-lg bg-muted/30 p-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {me?.role === 'patient'
+                          ? counsellorById.get(nextAppointment.counsellor)?.username ??
+                            `Counsellor #${nextAppointment.counsellor}`
+                          : nextAppointment.patient}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {formatUtcDateTime(nextAppointment.scheduled_time)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="capitalize">
+                        {nextAppointment.status}
+                      </Badge>
+                      {me?.role === 'patient' ? (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to="/appointments/my">View all</Link>
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to="/appointments/counsellor">View all</Link>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-6 text-center border border-dashed border-border rounded-lg bg-muted/30">
+                    You have no upcoming sessions.
+                  </p>
+                )}
               </CardContent>
             </Card>
 
@@ -555,12 +696,14 @@ export function MoodDashboard() {
                   <Heart className="h-3.5 w-3.5" />
                   Log today&apos;s mood
                 </Button>
-                <Button type="button" variant="outline" className="w-full h-9 text-sm" asChild>
-                  <Link to="/appointments/book">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Book a session
-                  </Link>
-                </Button>
+                {me?.role === 'patient' && (
+                  <Button type="button" variant="outline" className="w-full h-9 text-sm" asChild>
+                    <Link to="/appointments/book">
+                      <Calendar className="h-3.5 w-3.5" />
+                      Book a session
+                    </Link>
+                  </Button>
+                )}
               </CardContent>
             </Card>
 

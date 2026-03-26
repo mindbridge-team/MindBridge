@@ -29,7 +29,9 @@ class Profile(models.Model):
 
     @receiver(post_save, sender=User)
     def save_profile(sender, instance, **kwargs):
-        instance.profile.save()
+        # Users created before this signal existed (or imported late) may not have
+        # a Profile yet. Ensure one exists rather than raising RelatedObjectDoesNotExist.
+        Profile.objects.get_or_create(user=instance)
 
 
 class Counsellor(models.Model):

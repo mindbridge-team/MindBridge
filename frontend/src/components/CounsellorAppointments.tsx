@@ -1,21 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Calendar, Clock, RefreshCcw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Clock, RefreshCcw } from 'lucide-react';
 
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  getCounsellors,
-  getMyAppointments,
+  getCounsellorAppointments,
+  updateAppointmentStatus,
   type Appointment,
-  type Counsellor,
+  type AppointmentStatus,
 } from '../lib/api';
 
 function parseApiDate(value: string): Date | null {
-  // Some backends may return "YYYY-MM-DDTHH:mm:ss" without timezone.
-  // JS Date parsing is inconsistent for those strings across environments.
   const raw = value?.trim?.() ?? '';
   if (!raw) return null;
   const hasTz = /([zZ]|[+-]\d{2}:\d{2})$/.test(raw);
@@ -51,48 +48,38 @@ function statusClass(status: Appointment['status']): string {
   }
 }
 
-export function MyAppointments() {
-  const { accessToken, refreshToken, persistAccessToken } = useAuth();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [counsellors, setCounsellors] = useState<Counsellor[]>([]);
+const statusOptions: AppointmentStatus[] = ['pending', 'accepted', 'completed', 'cancelled'];
 
+export function CounsellorAppointments() {
+  const { accessToken, refreshToken, persistAccessToken } = useAuth();
+
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = async () => {
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [updateError, setUpdateError] = useState('');
+
+  const load = useCallback(async () => {
     if (!accessToken) return;
     setLoading(true);
     setError('');
     try {
-      const [apps, cs] = await Promise.all([
-        getMyAppointments(accessToken, {
-          refreshToken,
-          onAccessToken: persistAccessToken,
-        }),
-        getCounsellors(accessToken, {
-          refreshToken,
-          onAccessToken: persistAccessToken,
-        }),
-      ]);
+      const apps = await getCounsellorAppointments(accessToken, {
+        refreshToken,
+        onAccessToken: persistAccessToken,
+      });
       setAppointments(apps);
-      setCounsellors(cs);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load appointments');
     } finally {
       setLoading(false);
     }
-  };
+  }, [accessToken, refreshToken, persistAccessToken]);
 
   useEffect(() => {
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
-
-  const counsellorById = useMemo(() => {
-    const m = new Map<number, Counsellor>();
-    counsellors.forEach((c) => m.set(c.id, c));
-    return m;
-  }, [counsellors]);
+  }, [load]);
 
   const sorted = useMemo(() => {
     return [...appointments].sort((a, b) => {
@@ -112,25 +99,38 @@ export function MyAppointments() {
     return t == null ? false : t < now;
   });
 
+  const handleStatusChange = async (appointmentId: number, next: AppointmentStatus) => {
+    if (!accessToken) return;
+    setUpdatingId(appointmentId);
+    setUpdateError('');
+    try {
+      const updated = await updateAppointmentStatus(
+        accessToken,
+        appointmentId,
+        next,
+        { refreshToken, onAccessToken: persistAccessToken }
+      );
+      setAppointments((prev) => prev.map((a) => (a.id === appointmentId ? updated : a)));
+    } catch (err) {
+      setUpdateError(err instanceof Error ? err.message : 'Failed to update status');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl mb-1 text-foreground">My Appointments</h2>
+          <h2 className="text-2xl mb-1 text-foreground">Counsellor Appointments</h2>
           <p className="text-sm text-muted-foreground">
-            Track your upcoming and past sessions.
+            Review sessions assigned to you and update their status.
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={load} disabled={loading}>
             <RefreshCcw className="h-4 w-4" />
             Refresh
-          </Button>
-          <Button asChild className="bg-[#2d7a8f] hover:bg-[#236272]">
-            <Link to="/appointments/book">
-              <Calendar className="h-4 w-4" />
-              Book a session
-            </Link>
           </Button>
         </div>
       </div>
@@ -140,47 +140,60 @@ export function MyAppointments() {
           {error}
         </p>
       )}
+      {updateError && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4">
+          {updateError}
+        </p>
+      )}
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading appointments…</p>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           <section className="space-y-3">
             <h3 className="text-sm font-medium text-foreground">Upcoming</h3>
             {upcoming.length === 0 ? (
               <Card className="shadow-sm">
                 <CardContent className="px-4 py-6 text-sm text-muted-foreground text-center">
-                  No upcoming appointments yet.{' '}
-                  <Link to="/appointments/book" className="text-[#2d7a8f] hover:underline">
-                    Book your first session
-                  </Link>
-                  .
+                  No upcoming appointments assigned to you.
                 </CardContent>
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {upcoming.map((a) => {
-                  const c = counsellorById.get(a.counsellor);
                   const when = parseApiDate(a.scheduled_time);
+                  const isUpdating = updatingId === a.id;
                   return (
                     <Card key={a.id} className="gap-0 shadow-sm">
                       <CardHeader className="px-4 pt-4 pb-2">
                         <CardTitle className="text-sm flex items-center justify-between gap-2">
-                          <span className="truncate">
-                            {c ? c.username : `Counsellor #${a.counsellor}`}
-                          </span>
+                          <span className="truncate">{a.patient}</span>
                           <Badge className={`${statusClass(a.status)} text-xs py-0.5`}>
                             {a.status}
                           </Badge>
                         </CardTitle>
                       </CardHeader>
-                      <CardContent className="px-4 pb-4 space-y-1">
-                        {c?.specialization && (
-                          <p className="text-xs text-muted-foreground">{c.specialization}</p>
-                        )}
+                      <CardContent className="px-4 pb-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm">
                           <Clock className="h-4 w-4 text-muted-foreground" />
                           <span>{formatUtcDateTime(a.scheduled_time)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-muted-foreground">Status</label>
+                          <select
+                            value={a.status}
+                            onChange={(e) =>
+                              handleStatusChange(a.id, e.target.value as AppointmentStatus)
+                            }
+                            disabled={isUpdating}
+                            className="h-9 rounded-md border border-input bg-input-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                          >
+                            {statusOptions.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </CardContent>
                     </Card>
@@ -197,20 +210,34 @@ export function MyAppointments() {
             ) : (
               <div className="space-y-2">
                 {past.map((a) => {
-                  const c = counsellorById.get(a.counsellor);
                   const when = parseApiDate(a.scheduled_time);
+                  const isUpdating = updatingId === a.id;
                   return (
                     <Card key={a.id} className="gap-0 shadow-sm">
                       <CardContent className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {c ? c.username : `Counsellor #${a.counsellor}`}
-                          </p>
+                          <p className="text-sm font-medium truncate">{a.patient}</p>
                           <p className="text-xs text-muted-foreground">{formatUtcDateTime(a.scheduled_time)}</p>
                         </div>
-                        <Badge className={`${statusClass(a.status)} text-xs py-0.5`}>
-                          {a.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={`${statusClass(a.status)} text-xs py-0.5`}>
+                            {a.status}
+                          </Badge>
+                          <select
+                            value={a.status}
+                            onChange={(e) =>
+                              handleStatusChange(a.id, e.target.value as AppointmentStatus)
+                            }
+                            disabled={isUpdating}
+                            className="h-9 rounded-md border border-input bg-input-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                          >
+                            {statusOptions.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </CardContent>
                     </Card>
                   );
