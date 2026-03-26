@@ -11,7 +11,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ["username", "email", "password"]
 
     def create(self, validated_data):
-        # create_user hashes password correctly
         return User.objects.create_user(
             username=validated_data["username"],
             email=validated_data.get("email", ""),
