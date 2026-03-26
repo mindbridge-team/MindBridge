@@ -1,0 +1,28 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - affirm
+  - deny
+  - mood_great
+  - mood_unhappy
+  - bot_challenge
+  - out_of_scope
+  - ask_website_help
+  - ask_appointment_help
+  - ask_reminder_help
+
+responses: {}
+
+
+actions:
+  - action_chat_completion
+  - action_website_help
+  - action_appointment_help
+  - action_reminder_help"
+
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

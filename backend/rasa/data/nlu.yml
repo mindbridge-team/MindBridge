@@ -1,0 +1,150 @@
+version: "3.1"
+
+nlu:
+- intent: greet
+  examples: |
+    - hey
+    - hello
+    - hi
+    - hello there
+    - good morning
+    - good evening
+    - moin
+    - hey there
+    - let's go
+    - hey dude
+    - goodmorning?
+    - goodevening
+    - good afternoon?
+    - yo
+    - What's up
+    - how's it going
+
+- intent: ask_website_help
+  examples: |
+    - can you help me use the website
+    - how do I use this site
+    - where do I find things on here
+    - can you help me navigate the website
+    - where is the dashboard
+    - how do I find my profile
+    - where can I see my mood logs
+    - how do I use mindbridge
+    - I need help finding something on the site
+
+- intent: ask_appointment_help
+  examples: |
+    - how do I book an appointment
+    - can you help me set up an appointment
+    - where do I schedule counseling
+    - how do I make an appointment
+    - can I book a session here
+    - where do I see my appointments
+    - how do I cancel an appointment
+    - can you help with appointments
+    - I need help scheduling something
+
+- intent: ask_reminder_help
+  examples: |
+    - can I set a reminder
+    - how do reminders work
+    - can you remind me daily
+    - how do I set up daily reminders
+    - where do I turn on reminders
+    - can I get check in reminders
+    - how do I manage reminders
+    - help me with reminders
+    - I want daily check ins
+
+- intent: out_of_scope
+  examples: |
+    - what's the weather like?
+    - tell me a joke
+    - how old are you?
+    - do you like pizza?
+    - what time is it?
+    - who won the game last night?
+    - do you believe in aliens?
+    - where is the Eiffel Tower?
+    - tell me a story
+    - how tall is Mount Everest?
+    - what's your favorite movie?
+    - translate this to French
+    - how do I code in C++?
+    - can you write my essay?
+    - which car is faster
+    - car brand
+    - should i buy a tesla
+
+- intent: goodbye
+  examples: |
+    - cu
+    - good by
+    - cee you later
+    - good night
+    - bye
+    - goodbye
+    - have a nice day
+    - see you around
+    - bye bye
+    - see you later
+
+- intent: affirm
+  examples: |
+    - yes
+    - y
+    - indeed
+    - of course
+    - that sounds good
+    - correct
+
+- intent: deny
+  examples: |
+    - no
+    - n
+    - never
+    - I don't think so
+    - don't like that
+    - no way
+    - not really
+
+- intent: mood_great
+  examples: |
+    - perfect
+    - great
+    - amazing
+    - feeling like a king
+    - wonderful
+    - I am feeling very good
+    - I am great
+    - I am amazing
+    - I am going to save the world
+    - super stoked
+    - extremely good
+    - so so perfect
+    - so good
+    - so perfect
+
+- intent: mood_unhappy
+  examples: |
+    - my day was horrible
+    - I am sad
+    - I don't feel very well
+    - I am disappointed
+    - super sad
+    - I'm so sad
+    - sad
+    - very sad
+    - unhappy
+    - not good
+    - not very good
+    - extremly sad
+    - so saad
+    - so sad
+
+- intent: bot_challenge
+  examples: |
+    - are you a bot?
+    - are you a human?
+    - am I talking to a bot?
+    - am I talking to a human?
