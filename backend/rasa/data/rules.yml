@@ -3,12 +3,32 @@ version: "3.1"
 rules:
 
 
+- rule: Handling goodbye
+  steps:
+    - intent: goodbye
+    - action: action_chat_completion
+
+- rule: Handling greet
+  steps:
+    - intent: greet
+    - action: action_chat_completion
+
 - rule: Handling out_of_scope intent and is not sure
   steps:
   - intent: out_of_scope
   - action: action_chat_completion
 
-- rule: Handling goodbye
+- rule: Handling website help
   steps:
-    - intent: goodbye
-    - action: action_chat_completion
+    - intent: ask_website_help
+    - action: action_website_help
+
+- rule: Handling appointments
+  steps:
+    - intent: ask_appointment_help
+    - action: action_appointment_help
+
+- rule: Handling reminders
+  steps:
+    - intent: ask_reminder_help
+    - action: action_reminder_help"
