@@ -25,11 +25,27 @@ Open http://localhost:5173 in your browser.
 
 See `backend/moods/README.md` for setup instructions.
 
+## Ai Chatbot
+Rasa:
+activate 2 new venv in rasa folder: .\.venv\Scripts\Activate.ps1
+Terminal 1: rasa run actions
+Terminal 2: python -m rasa run --enable-api --cors "*"
+
+Run Django Server -> backend folder & venv:
+Terminal 3: python manage.py runserver
+Terminal 4: Run invoke to api testing:
+Example:
+Invoke-RestMethod -Uri "http://localhost:5005/webhooks/rest/webhook" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"sender":"test_user","message":"what's the weather like"}'
+
 ## Tech Stack
 
 - React + TypeScript + Vite
 - Tailwind CSS
 - Django + PostgreSQL
+- Rasa
 
 ## Design reference
 
