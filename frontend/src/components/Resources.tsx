@@ -209,7 +209,7 @@ export function Resources() {
               className="bg-[#2d7a8f] hover:bg-[#236272] h-8 text-xs"
               asChild
             >
-              <Link to="/">Book Session</Link>
+              <Link to="/appointments/book">Book Session</Link>
             </Button>
           </div>
         </CardContent>

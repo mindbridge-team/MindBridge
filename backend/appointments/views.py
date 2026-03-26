@@ -52,10 +52,12 @@ class AvailableSlotsView(APIView):
         # end_time = datetime.combine(date, datetime.min.time()).replace(hour=17)
 
         start_time = timezone.make_aware(
-            datetime.combine(date, datetime.min.time()).replace(hour=9)
+            datetime.combine(date, datetime.min.time()).replace(hour=8)
         )
+        # Slots are 1 hour long; end_time is exclusive so set to 18:00
+        # to include a 17:00 (5pm) start time.
         end_time = timezone.make_aware(
-            datetime.combine(date, datetime.min.time()).replace(hour=17)
+            datetime.combine(date, datetime.min.time()).replace(hour=18)
         )
 
         slots = []
@@ -65,17 +67,23 @@ class AvailableSlotsView(APIView):
             slots.append(current)
             current += timedelta(hours=1)
 
-        # Get booked slots
-        booked_slots = Appointment.objects.filter(
+        # Get booked appointments within the booking window for this day.
+        # Using a range check avoids timezone/equality edge-cases.
+        booked_appointments = Appointment.objects.filter(
             counsellor_id=counsellor_id,
-            scheduled_time__date=date,
-            status__in=["pending", "approved", "accepted"]
-        ).values_list('scheduled_time', flat=True)
+            scheduled_time__gte=start_time,
+            scheduled_time__lt=end_time
+        ).exclude(status="cancelled").values_list('scheduled_time', flat=True)
 
-        # Remove booked slots
+        booked_slot_starts = {
+            timezone.localtime(dt).replace(minute=0, second=0, microsecond=0)
+            for dt in booked_appointments
+        }
+
+        # Remove booked slots (same hour start)
         available_slots = [
             slot for slot in slots
-            if slot.replace(second=0, microsecond=0) not in booked_slots
+            if slot.replace(minute=0, second=0, microsecond=0) not in booked_slot_starts
         ]
 
         return Response({
