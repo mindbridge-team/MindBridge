@@ -62,6 +62,11 @@ type MoodAuthOptions = {
   onAccessToken?: (token: string) => void;
 };
 
+type AuthOptions = {
+  refreshToken?: string | null;
+  onAccessToken?: (token: string) => void;
+};
+
 async function fetchMoodsOnce(accessToken: string): Promise<Response> {
   return fetch(`${API_BASE}/api/moods/`, {
     headers: authHeaders(accessToken),
@@ -119,6 +124,120 @@ export async function createMood(
       (err.mood_value as string[] | undefined)?.[0] ||
       (err.note as string[] | undefined)?.[0] ||
       (res.status === 401 ? 'Not authenticated. Please log in again.' : 'Failed to save mood');
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+export type Counsellor = {
+  id: number;
+  username: string;
+  email: string;
+  specialization: string;
+  experience_years: number;
+  availability_text: string;
+  is_verified: boolean;
+};
+
+async function fetchCounsellorsOnce(accessToken: string): Promise<Response> {
+  return fetch(`${API_BASE}/api/auth/counsellors/`, {
+    headers: authHeaders(accessToken),
+  });
+}
+
+export async function getCounsellors(
+  accessToken: string,
+  auth?: AuthOptions
+): Promise<Counsellor[]> {
+  let token = accessToken;
+  let res = await fetchCounsellorsOnce(token);
+  if (res.status === 401 && auth?.refreshToken) {
+    const { access } = await refreshAccessToken(auth.refreshToken);
+    auth.onAccessToken?.(access);
+    token = access;
+    res = await fetchCounsellorsOnce(token);
+  }
+  if (!res.ok) throw new Error('Failed to load counsellors');
+  return res.json();
+}
+
+export type AppointmentStatus = 'pending' | 'accepted' | 'completed' | 'cancelled';
+
+export type Appointment = {
+  id: number;
+  patient: string;
+  counsellor: number;
+  scheduled_time: string;
+  status: AppointmentStatus;
+  created_at: string;
+};
+
+type CreateAppointmentInput = {
+  counsellor: number;
+  scheduled_time: string;
+};
+
+async function fetchMyAppointmentsOnce(accessToken: string): Promise<Response> {
+  return fetch(`${API_BASE}/api/appointments/my/`, {
+    headers: authHeaders(accessToken),
+  });
+}
+
+export async function getMyAppointments(
+  accessToken: string,
+  auth?: AuthOptions
+): Promise<Appointment[]> {
+  let token = accessToken;
+  let res = await fetchMyAppointmentsOnce(token);
+  if (res.status === 401 && auth?.refreshToken) {
+    const { access } = await refreshAccessToken(auth.refreshToken);
+    auth.onAccessToken?.(access);
+    token = access;
+    res = await fetchMyAppointmentsOnce(token);
+  }
+  if (!res.ok) throw new Error('Failed to load appointments');
+  return res.json();
+}
+
+async function createAppointmentOnce(
+  accessToken: string,
+  input: CreateAppointmentInput
+): Promise<Response> {
+  return fetch(`${API_BASE}/api/appointments/create/`, {
+    method: 'POST',
+    headers: authHeaders(accessToken),
+    body: JSON.stringify(input),
+  });
+}
+
+export async function createAppointment(
+  accessToken: string,
+  input: CreateAppointmentInput,
+  auth?: AuthOptions
+): Promise<Appointment> {
+  let token = accessToken;
+  let res = await createAppointmentOnce(token, input);
+  if (res.status === 401 && auth?.refreshToken) {
+    const { access } = await refreshAccessToken(auth.refreshToken);
+    auth.onAccessToken?.(access);
+    token = access;
+    res = await createAppointmentOnce(token, input);
+  }
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    const detail = err.detail;
+    const detailStr = Array.isArray(detail)
+      ? String(detail[0])
+      : typeof detail === 'string'
+        ? detail
+        : '';
+    const fieldMsg =
+      (err.scheduled_time as string[] | undefined)?.[0] ||
+      (err.counsellor as string[] | undefined)?.[0];
+    const msg =
+      detailStr ||
+      fieldMsg ||
+      (res.status === 401 ? 'Not authenticated. Please log in again.' : 'Failed to create appointment');
     throw new Error(msg);
   }
   return res.json();

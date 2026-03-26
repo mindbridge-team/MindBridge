@@ -21,7 +21,7 @@ const sidebarNav: {
 }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, to: '/' },
   { id: 'mood', label: 'Mood Tracker', icon: Heart },
-  { id: 'session', label: 'Book Session', icon: Calendar },
+  { id: 'session', label: 'Book Session', icon: Calendar, to: '/appointments/book' },
   { id: 'resources', label: 'Resources', icon: BookOpen, to: '/resources' },
   { id: 'community', label: 'Community', icon: Users },
   { id: 'chatbot', label: 'Chatbot', icon: MessageCircle },
@@ -36,7 +36,7 @@ const mobileBottomNav: {
 }[] = [
   { id: 'dashboard', label: 'Home', icon: LayoutDashboard, to: '/' },
   { id: 'mood', label: 'Mood', icon: Heart },
-  { id: 'session', label: 'Book', icon: Calendar },
+  { id: 'session', label: 'Book', icon: Calendar, to: '/appointments/book' },
   { id: 'resources', label: 'Resources', icon: BookOpen, to: '/resources' },
   { id: 'profile', label: 'Profile', icon: User },
 ];

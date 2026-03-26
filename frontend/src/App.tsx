@@ -5,6 +5,8 @@ import { SignUp } from './components/SignUp';
 import { MoodDashboard } from './components/MoodDashboard';
 import { MainLayout } from './components/MainLayout';
 import { Resources } from './components/Resources';
+import { BookSession } from './components/BookSession';
+import { MyAppointments } from './components/MyAppointments';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -34,6 +36,8 @@ function App() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<MoodDashboard />} />
         <Route path="/resources" element={<Resources />} />
+        <Route path="/appointments/book" element={<BookSession />} />
+        <Route path="/appointments/my" element={<MyAppointments />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

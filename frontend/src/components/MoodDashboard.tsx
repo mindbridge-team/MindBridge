@@ -555,9 +555,11 @@ export function MoodDashboard() {
                   <Heart className="h-3.5 w-3.5" />
                   Log today&apos;s mood
                 </Button>
-                <Button type="button" variant="outline" className="w-full h-9 text-sm" disabled>
-                  <Calendar className="h-3.5 w-3.5" />
-                  Book a session
+                <Button type="button" variant="outline" className="w-full h-9 text-sm" asChild>
+                  <Link to="/appointments/book">
+                    <Calendar className="h-3.5 w-3.5" />
+                    Book a session
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
