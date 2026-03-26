@@ -1,0 +1,14 @@
+version: "3.1"
+
+rules:
+
+
+- rule: Handling out_of_scope intent and is not sure
+  steps:
+  - intent: out_of_scope
+  - action: action_chat_completion
+
+- rule: Handling goodbye
+  steps:
+    - intent: goodbye
+    - action: action_chat_completion

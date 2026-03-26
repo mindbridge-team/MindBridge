@@ -12,9 +12,24 @@ venv/
 env/
 backend/.venv/
 
+# Python tooling
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
 # Django static/media 
 staticfiles/
 media/
+
+# Rasa
+backend/rasa/models/
+backend/rasa/.rasa/
+backend/rasa/results/
+backend/rasa/test_results/
+backend/rasa/generated/
+backend/rasa/.cache/
+*.tar.gz
 
 # env 
 .env
