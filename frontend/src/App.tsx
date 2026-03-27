@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { Login } from './components/Login';
 import { SignUp } from './components/SignUp';
 import { MoodDashboard } from './components/MoodDashboard';
+import { MoodTracker } from './components/MoodTracker';
 import { MainLayout } from './components/MainLayout';
 import { Resources } from './components/Resources';
 import { BookSession } from './components/BookSession';
@@ -53,6 +54,12 @@ function App() {
           }
         />
         <Route path="/resources" element={<Resources />} />
+        <Route
+          path="/mood"
+          element={
+            me.role === 'patient' ? <MoodTracker /> : <Navigate to="/" replace />
+          }
+        />
 
         <Route
           path="/appointments/book"

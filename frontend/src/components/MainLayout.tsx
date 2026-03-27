@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -12,10 +13,12 @@ import {
 
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { ChatBubble } from './ChatBubble';
 import { useAuth } from '../contexts/AuthContext';
 
 export function MainLayout() {
   const { logout, me } = useAuth();
+  const [chatOpen, setChatOpen] = useState(false);
   const isCounsellor = me?.role === 'counsellor';
   const isAdmin = me?.role === 'admin';
   const isPatient = me?.role === 'patient';
@@ -29,7 +32,9 @@ export function MainLayout() {
     to?: string;
   }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, to: '/' },
-    ...(isPatient ? [{ id: 'mood', label: 'Mood Tracker', icon: Heart } as const] : []),
+    ...(isPatient
+      ? [{ id: 'mood', label: 'Mood Tracker', icon: Heart, to: '/mood' } as const]
+      : []),
     ...(isPatient
       ? [{ id: 'session', label: 'Book Session', icon: Calendar, to: '/appointments/book' } as const]
       : []),
@@ -56,7 +61,7 @@ export function MainLayout() {
     to?: string;
   }[] = [
     { id: 'dashboard', label: 'Home', icon: LayoutDashboard, to: '/' },
-    ...(isPatient ? [{ id: 'mood', label: 'Mood', icon: Heart } as const] : []),
+    ...(isPatient ? [{ id: 'mood', label: 'Mood', icon: Heart, to: '/mood' } as const] : []),
     ...(isPatient ? [{ id: 'session', label: 'Book', icon: Calendar, to: '/appointments/book' } as const] : []),
     ...(isCounsellor || isAdmin
       ? [
@@ -152,8 +157,8 @@ export function MainLayout() {
             <Button
               size="sm"
               className="w-full bg-[#2d7a8f] hover:bg-[#236272] h-8 text-xs"
-              disabled
-              title="Coming soon"
+              type="button"
+              onClick={() => setChatOpen(true)}
             >
               <MessageCircle className="h-3.5 w-3.5" />
               Start Chat
@@ -247,6 +252,8 @@ export function MainLayout() {
             })}
           </div>
         </nav>
+
+        <ChatBubble open={chatOpen} onOpenChange={setChatOpen} />
       </div>
     </div>
   );

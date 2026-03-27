@@ -161,7 +161,6 @@ export function MyAppointments() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {upcoming.map((a) => {
                   const c = counsellorById.get(a.counsellor);
-                  const when = parseApiDate(a.scheduled_time);
                   return (
                     <Card key={a.id} className="gap-0 shadow-sm">
                       <CardHeader className="px-4 pt-4 pb-2">
@@ -198,7 +197,6 @@ export function MyAppointments() {
               <div className="space-y-2">
                 {past.map((a) => {
                   const c = counsellorById.get(a.counsellor);
-                  const when = parseApiDate(a.scheduled_time);
                   return (
                     <Card key={a.id} className="gap-0 shadow-sm">
                       <CardContent className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">

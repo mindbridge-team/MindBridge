@@ -1,11 +1,4 @@
-import {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-  type FormEvent,
-} from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Heart,
@@ -20,7 +13,6 @@ import {
   Music,
 } from 'lucide-react';
 import { Button } from './ui/button';
-import { Label } from './ui/label';
 import { Badge } from './ui/badge';
 import {
   Card,
@@ -31,7 +23,6 @@ import {
 } from './ui/card';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  createMood,
   getCounsellorAppointments,
   getCounsellors,
   getMoods,
@@ -44,39 +35,7 @@ import {
   getDashboardFeaturedResources,
   type ResourceType,
 } from '../data/resourcesData';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
-
-const MOOD_LABELS: Record<number, string> = {
-  1: 'Very low',
-  2: 'Low',
-  3: 'Okay',
-  4: 'Good',
-  5: 'Great',
-};
-
-const MOOD_EMOJI: Record<number, string> = {
-  1: '😭',
-  2: '😟',
-  3: '😐',
-  4: '😊',
-  5: '😄',
-};
-
-const MOOD_STRIP: { value: number; short: string }[] = [
-  { value: 1, short: 'Very Bad' },
-  { value: 2, short: 'Bad' },
-  { value: 3, short: 'Okay' },
-  { value: 4, short: 'Good' },
-  { value: 5, short: 'Great' },
-];
+import { MOOD_EMOJI, MOOD_LABELS } from '../data/moodConstants';
 
 function formatDayKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -160,14 +119,9 @@ function getResourceIcon(type: ResourceType) {
 
 export function MoodDashboard() {
   const { accessToken, refreshToken, persistAccessToken, me, logout } = useAuth();
-  const moodSectionRef = useRef<HTMLDivElement>(null);
   const [moods, setMoods] = useState<MoodEntry[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [counsellors, setCounsellors] = useState<Counsellor[]>([]);
-  const [moodValue, setMoodValue] = useState<number | null>(null);
-  const [note, setNote] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [loadError, setLoadError] = useState('');
   const [appointmentsError, setAppointmentsError] = useState('');
   const [moodsLoading, setMoodsLoading] = useState(true);
@@ -266,43 +220,6 @@ export function MoodDashboard() {
 
   const nextAppointment = upcomingAppointments[0];
 
-  const chartData = useMemo(
-    () =>
-      [...moods]
-        .reverse()
-        .slice(-14)
-        .map((m) => ({
-          date: new Date(m.created_at).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          }),
-          mood: m.mood_value,
-          full: m.created_at,
-        })),
-    [moods]
-  );
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!accessToken || moodValue === null) return;
-    setIsLoading(true);
-    setError('');
-    try {
-      const newMood = await createMood(accessToken, moodValue, note.trim());
-      setMoods((prev) => [newMood, ...prev]);
-      setMoodValue(null);
-      setNote('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save mood');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const scrollToMood = () => {
-    moodSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e8f4f7] via-[#f8fafb] to-[#d4e9f0]">
       <header className="border-b border-border/50 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
@@ -347,65 +264,7 @@ export function MoodDashboard() {
           </p>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-          <div
-            ref={moodSectionRef}
-            className="bg-card text-card-foreground rounded-xl border shadow-sm p-3 md:p-4"
-          >
-            <h3 className="text-sm font-medium text-foreground mb-3">How are you feeling today?</h3>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="flex justify-between gap-1.5">
-                {MOOD_STRIP.map(({ value, short }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={moodValue === value}
-                    onClick={() => setMoodValue(value)}
-                    className={`flex flex-col items-center gap-1 p-1.5 rounded-lg transition-colors flex-1 min-w-0 ${
-                      moodValue === value
-                        ? 'bg-primary text-primary-foreground ring-2 ring-primary/30'
-                        : 'hover:bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    <span className="text-xl md:text-2xl leading-none" aria-hidden>
-                      {MOOD_EMOJI[value]}
-                    </span>
-                    <span className="text-[10px] md:text-xs leading-tight text-center">{short}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="mood-note" className="text-xs text-muted-foreground">
-                  Add a note (optional)
-                </Label>
-                <textarea
-                  id="mood-note"
-                  placeholder="What's on your mind?"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={3}
-                  className="w-full min-h-[50px] rounded-lg border border-border bg-input-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
-              </div>
-
-              {error && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-md px-2 py-1.5">
-                  {error}
-                </p>
-              )}
-
-              <Button
-                type="submit"
-                disabled={isLoading || moodValue === null}
-                className="w-full h-9 text-xs md:text-sm"
-              >
-                {isLoading ? 'Saving…' : 'Log mood'}
-              </Button>
-            </form>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 md:gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
             <Card className="gap-0 border-l-4 border-l-[#4db8a8] shadow-sm">
               <CardHeader className="px-4 pt-4 pb-2 space-y-0">
                 <CardTitle className="text-xs font-medium flex items-center justify-between gap-2">
@@ -467,7 +326,7 @@ export function MoodDashboard() {
                   {streak} {streak === 1 ? 'day' : 'days'}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {streak > 0 ? 'Keep it up!' : 'Log to start a streak'}
+                  {streak > 0 ? 'Keep it up!' : 'Log on Mood Tracker to start'}
                 </p>
               </CardContent>
             </Card>
@@ -484,7 +343,6 @@ export function MoodDashboard() {
                 <p className="text-xs text-muted-foreground mt-0.5">Always available</p>
               </CardContent>
             </Card>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5">
@@ -534,53 +392,6 @@ export function MoodDashboard() {
                 )}
               </CardContent>
             </Card>
-
-            {chartData.length > 0 && (
-              <Card className="gap-0 shadow-sm">
-                <CardHeader className="px-4 pt-4 pb-2 md:px-6 md:pt-6">
-                  <CardTitle className="text-sm md:text-base text-primary">Mood over time</CardTitle>
-                  <CardDescription className="text-xs">Last 14 entries</CardDescription>
-                </CardHeader>
-                <CardContent className="px-4 pb-4 md:px-6 md:pb-6">
-                  <div className="h-48 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                        <XAxis
-                          dataKey="date"
-                          tick={{ fontSize: 11 }}
-                          className="text-muted-foreground"
-                        />
-                        <YAxis
-                          domain={[1, 5]}
-                          ticks={[1, 2, 3, 4, 5]}
-                          tick={{ fontSize: 11 }}
-                          className="text-muted-foreground"
-                        />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: 'var(--card)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '8px',
-                          }}
-                          formatter={(value: number | undefined) =>
-                            value != null ? [MOOD_LABELS[value], 'Mood'] : null
-                          }
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="mood"
-                          stroke="var(--primary)"
-                          strokeWidth={2}
-                          dot={{ fill: 'var(--primary)', r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             <div>
               <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
@@ -640,50 +451,6 @@ export function MoodDashboard() {
                 })}
               </div>
             </div>
-
-            <Card className="gap-0 shadow-sm">
-              <CardHeader className="px-4 pt-4 pb-2 md:px-6 md:pt-6">
-                <CardTitle className="text-sm md:text-base text-primary">Recent entries</CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 md:px-6 md:pb-6">
-                {moods.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No mood entries yet. Log your first mood above!
-                  </p>
-                ) : (
-                  <ul className="space-y-3">
-                    {moods.map((m) => (
-                      <li
-                        key={m.id}
-                        className="flex items-start gap-3 py-2 border-b border-border/50 last:border-0"
-                      >
-                        <span
-                          className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-lg bg-secondary text-primary"
-                          title={MOOD_LABELS[m.mood_value]}
-                          aria-hidden
-                        >
-                          {MOOD_EMOJI[m.mood_value]}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm text-foreground">
-                            {MOOD_LABELS[m.mood_value]}
-                            {m.note && (
-                              <span className="text-muted-foreground">
-                                {' — '}
-                                {m.note}
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {new Date(m.created_at).toLocaleString()}
-                          </p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
           </div>
 
           <div className="space-y-4">
@@ -692,17 +459,21 @@ export function MoodDashboard() {
                 <CardTitle className="text-base">Quick actions</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4 space-y-2">
-                <Button type="button" className="w-full h-9 text-sm" onClick={scrollToMood}>
-                  <Heart className="h-3.5 w-3.5" />
-                  Log today&apos;s mood
-                </Button>
                 {me?.role === 'patient' && (
-                  <Button type="button" variant="outline" className="w-full h-9 text-sm" asChild>
-                    <Link to="/appointments/book">
-                      <Calendar className="h-3.5 w-3.5" />
-                      Book a session
-                    </Link>
-                  </Button>
+                  <>
+                    <Button type="button" className="w-full h-9 text-sm" asChild>
+                      <Link to="/mood">
+                        <Heart className="h-3.5 w-3.5" />
+                        Log today&apos;s mood
+                      </Link>
+                    </Button>
+                    <Button type="button" variant="outline" className="w-full h-9 text-sm" asChild>
+                      <Link to="/appointments/book">
+                        <Calendar className="h-3.5 w-3.5" />
+                        Book a session
+                      </Link>
+                    </Button>
+                  </>
                 )}
               </CardContent>
             </Card>
