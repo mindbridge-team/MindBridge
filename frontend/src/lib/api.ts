@@ -70,7 +70,7 @@ export async function refreshAccessToken(refresh: string): Promise<{ access: str
   return { access: refreshedTokens.access };
 }
 
-type AuthOptions = {
+export type AuthOptions = {
   refreshToken?: string | null;
   onAccessToken?: (token: string) => void;
 };
@@ -86,24 +86,7 @@ function pickErrorText(payload: unknown, keys: string[]): string {
   return '';
 }
 
-async function requestWithAuthRetry(
-  accessToken: string,
-  auth: AuthOptions | undefined,
-  send: (token: string) => Promise<Response>
-): Promise<Response> {
-  // First try the request with the current access token.
-  const firstResponse = await send(accessToken);
-  if (firstResponse.status !== 401 || !auth?.refreshToken) return firstResponse;
-
-  // If expired and refresh token exists, refresh once.
-  const { access } = await refreshAccessToken(auth.refreshToken);
-  auth.onAccessToken?.(access);
-
-  // Retry with the refreshed access token.
-  return send(access);
-}
-
-type AuthedRequestOptions = {
+type RequestOptions = {
   method?: 'GET' | 'POST' | 'PATCH';
   body?: unknown;
   auth?: AuthOptions;
@@ -111,12 +94,11 @@ type AuthedRequestOptions = {
   errorKeys?: string[];
 };
 
-async function authedJson<T>(
+async function requestJson<T>(
   path: string,
   accessToken: string,
-  { method = 'GET', body, auth, errorMessage, errorKeys = [] }: AuthedRequestOptions
+  { method = 'GET', body, auth, errorMessage, errorKeys = [] }: RequestOptions
 ): Promise<T> {
-  // Build one reusable request callback for retry logic.
   const send = (token: string) =>
     fetch(`${API_BASE}${path}`, {
       method,
@@ -124,7 +106,15 @@ async function authedJson<T>(
       body: body == null ? undefined : JSON.stringify(body),
     });
 
-  const response = await requestWithAuthRetry(accessToken, auth, send);
+  let token = accessToken;
+  let response = await send(token);
+  if (response.status === 401 && auth?.refreshToken) {
+    const refreshed = await refreshAccessToken(auth.refreshToken);
+    token = refreshed.access;
+    auth.onAccessToken?.(token);
+    response = await send(token);
+  }
+
   if (!response.ok) {
     const errorPayload = await response.json().catch(() => ({}));
     const detailedError = pickErrorText(errorPayload, errorKeys);
@@ -137,7 +127,7 @@ async function authedJson<T>(
 // Authenticated endpoints
 // ------------------------
 export async function getMe(accessToken: string, auth?: AuthOptions): Promise<Me> {
-  return authedJson<Me>('/api/auth/me/', accessToken, {
+  return requestJson<Me>('/api/auth/me/', accessToken, {
     auth,
     errorMessage: 'Failed to load user profile',
   });
@@ -147,7 +137,7 @@ export async function getMoods(
   accessToken: string,
   auth?: AuthOptions
 ): Promise<MoodEntry[]> {
-  return authedJson<MoodEntry[]>('/api/moods/', accessToken, {
+  return requestJson<MoodEntry[]>('/api/moods/', accessToken, {
     auth,
     errorMessage: 'Failed to fetch moods',
   });
@@ -159,7 +149,7 @@ export async function createMood(
   note: string,
   auth?: AuthOptions
 ): Promise<MoodEntry> {
-  return authedJson<MoodEntry>('/api/moods/', accessToken, {
+  return requestJson<MoodEntry>('/api/moods/', accessToken, {
     method: 'POST',
     body: { mood_value, note },
     auth,
@@ -182,7 +172,7 @@ export async function getCounsellors(
   accessToken: string,
   auth?: AuthOptions
 ): Promise<Counsellor[]> {
-  return authedJson<Counsellor[]>('/api/auth/counsellors/', accessToken, {
+  return requestJson<Counsellor[]>('/api/auth/counsellors/', accessToken, {
     auth,
     errorMessage: 'Failed to load counsellors',
   });
@@ -212,7 +202,7 @@ export async function getMyAppointments(
   accessToken: string,
   auth?: AuthOptions
 ): Promise<Appointment[]> {
-  return authedJson<Appointment[]>('/api/appointments/my/', accessToken, {
+  return requestJson<Appointment[]>('/api/appointments/my/', accessToken, {
     auth,
     errorMessage: 'Failed to load appointments',
   });
@@ -222,7 +212,7 @@ export async function getCounsellorAppointments(
   accessToken: string,
   auth?: AuthOptions
 ): Promise<Appointment[]> {
-  return authedJson<Appointment[]>('/api/appointments/counsellor/', accessToken, {
+  return requestJson<Appointment[]>('/api/appointments/counsellor/', accessToken, {
     auth,
     errorMessage: 'Failed to load counsellor appointments',
   });
@@ -235,7 +225,7 @@ export async function getAvailableSlots(
   auth?: AuthOptions
 ): Promise<string[]> {
   const qs = new URLSearchParams({ date });
-  const availableSlotsResponse = await authedJson<AvailableSlotsResponse>(
+  const availableSlotsResponse = await requestJson<AvailableSlotsResponse>(
     `/api/appointments/available/${counsellorId}/?${qs.toString()}`,
     accessToken,
     { auth, errorMessage: 'Failed to load available slots' }
@@ -249,7 +239,7 @@ export async function updateAppointmentStatus(
   status: AppointmentStatus,
   auth?: AuthOptions
 ): Promise<Appointment> {
-  return authedJson<Appointment>(`/api/appointments/${appointmentId}/`, accessToken, {
+  return requestJson<Appointment>(`/api/appointments/${appointmentId}/`, accessToken, {
     method: 'PATCH',
     body: { status },
     auth,
@@ -263,7 +253,7 @@ export async function createAppointment(
   input: CreateAppointmentInput,
   auth?: AuthOptions
 ): Promise<Appointment> {
-  return authedJson<Appointment>('/api/appointments/create/', accessToken, {
+  return requestJson<Appointment>('/api/appointments/create/', accessToken, {
     method: 'POST',
     body: input,
     auth,

@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import type { ReactElement } from 'react';
 import { Login } from './components/Login';
 import { SignUp } from './components/SignUp';
 import { MoodDashboard } from './components/MoodDashboard';
@@ -10,6 +8,7 @@ import { Resources } from './components/Resources';
 import { BookSession } from './components/BookSession';
 import { MyAppointments } from './components/MyAppointments';
 import { CounsellorAppointments } from './components/CounsellorAppointments';
+import { GuardedRoute, HomeRoute } from './components/routes/RouteGuards';
 import { useAuth } from './contexts/AuthContext';
 import './App.css';
 
@@ -23,24 +22,15 @@ function AuthLoadingScreen() {
   );
 }
 
-function roleRoute(allowed: boolean, element: ReactElement) {
-  return allowed ? element : <Navigate to="/" replace />;
-}
-
 function App() {
   const { isLoggedIn, login, me } = useAuth();
-  const [showSignUp, setShowSignUp] = useState(false);
 
   if (!isLoggedIn) {
-    const handleBackToLogin = () => setShowSignUp(false);
-    if (showSignUp) {
-      return <SignUp onSignUp={handleBackToLogin} onBackToLogin={handleBackToLogin} />;
-    }
     return (
-      <Login
-        onLogin={login}
-        onSignUpClick={() => setShowSignUp(true)}
-      />
+      <Routes>
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="*" element={<Login onLogin={login} />} />
+      </Routes>
     );
   }
 
@@ -57,32 +47,30 @@ function App() {
       <Route element={<MainLayout />}>
         <Route
           path="/"
-          element={
-            isCounsellorOrAdmin
-              ? <Navigate to="/appointments/counsellor" replace />
-              : <MoodDashboard />
-          }
+          element={<HomeRoute isCounsellorOrAdmin={isCounsellorOrAdmin} patientHome={<MoodDashboard />} />}
         />
         <Route path="/resources" element={<Resources />} />
         <Route
           path="/mood"
-          element={roleRoute(isPatient, <MoodTracker />)}
+          element={<GuardedRoute allowed={isPatient} element={<MoodTracker />} />}
         />
 
         <Route
           path="/appointments/book"
-          element={roleRoute(canAccessPatientAppointments, <BookSession />)}
+          element={<GuardedRoute allowed={canAccessPatientAppointments} element={<BookSession />} />}
         />
         <Route
           path="/appointments/my"
-          element={roleRoute(canAccessPatientAppointments, <MyAppointments />)}
+          element={<GuardedRoute allowed={canAccessPatientAppointments} element={<MyAppointments />} />}
         />
         <Route
           path="/appointments/counsellor"
-          element={roleRoute(isCounsellorOrAdmin, <CounsellorAppointments />)}
+          element={<GuardedRoute allowed={isCounsellorOrAdmin} element={<CounsellorAppointments />} />}
         />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/login" element={<Navigate to="/" replace />} />
+      <Route path="/signup" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

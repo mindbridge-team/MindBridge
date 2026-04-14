@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import {
   Heart,
-  LogOut,
   Calendar,
   BookOpen,
   Play,
@@ -33,6 +32,9 @@ import {
   getTodaysLatestMood,
   getUpcomingAppointments,
 } from './dashboard/dashboardUtils';
+import { DashboardTopBar } from './dashboard/DashboardTopBar';
+import { DashboardWelcome } from './dashboard/DashboardWelcome';
+import { CrisisSupportNote } from './dashboard/CrisisSupportNote';
 
 // Demo home screen:
 // quick mood summary, next session, actions, and featured resources.
@@ -180,31 +182,10 @@ export function MoodDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e8f4f7] via-[#f8fafb] to-[#d4e9f0]">
-      <header className="border-b border-border/50 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#4db8a8] to-[#2d7a8f] flex items-center justify-center text-white">
-              <Heart className="h-5 w-5" fill="currentColor" />
-            </div>
-            <h1 className="text-lg font-semibold text-primary">MindBridge</h1>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={logout}
-            className="text-primary hover:bg-secondary"
-          >
-            <LogOut className="h-4 w-4 mr-1" />
-            Log out
-          </Button>
-        </div>
-      </header>
+      <DashboardTopBar onLogout={logout} />
 
       <main className="max-w-7xl mx-auto px-4 py-6 pb-12 space-y-4 md:space-y-5">
-        <div>
-          <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-1">Welcome back to MindBridge</h2>
-          <p className="text-xs md:text-sm text-muted-foreground">{todayLine}</p>
-        </div>
+        <DashboardWelcome todayLine={todayLine} />
 
         {loadError && <ErrorMessage>{loadError}</ErrorMessage>}
 
@@ -237,14 +218,7 @@ export function MoodDashboard() {
           </div>
         </div>
 
-        <div className="text-center text-xs text-muted-foreground pt-2">
-          <p>
-            In crisis? Call the National Suicide Prevention Lifeline:{' '}
-            <a href="tel:988" className="text-primary hover:underline">
-              988
-            </a>
-          </p>
-        </div>
+        <CrisisSupportNote />
       </main>
     </div>
   );

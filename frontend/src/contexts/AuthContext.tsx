@@ -1,16 +1,16 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { getMe, login as apiLogin, type Me } from '../lib/api';
+import { loadCurrentProfile } from './authProfile';
+import {
+  clearAuthTokens,
+  readStoredTokens,
+  storeAccessToken,
+  storeAuthTokens,
+} from './authStorage';
 
 // Shared auth state for demo:
 // stores tokens, current user, and login/logout behavior.
-const TOKEN_KEY = 'mindbridge_access_token';
-const REFRESH_KEY = 'mindbridge_refresh_token';
-
-function readStoredToken(key: string): string | null {
-  return localStorage.getItem(key);
-}
-
 type AuthContextType = {
   isLoggedIn: boolean;
   accessToken: string | null;
@@ -24,19 +24,18 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [accessToken, setAccessToken] = useState<string | null>(() => readStoredToken(TOKEN_KEY));
-  const [refreshToken, setRefreshToken] = useState<string | null>(() => readStoredToken(REFRESH_KEY));
+  const [accessToken, setAccessToken] = useState<string | null>(() => readStoredTokens().accessToken);
+  const [refreshToken, setRefreshToken] = useState<string | null>(() => readStoredTokens().refreshToken);
   const [me, setMe] = useState<Me | null>(null);
 
   function persistAccessToken(token: string) {
-    localStorage.setItem(TOKEN_KEY, token);
+    storeAccessToken(token);
     setAccessToken(token);
   }
 
   async function login(username: string, password: string) {
     const { access, refresh } = await apiLogin(username, password);
-    localStorage.setItem(TOKEN_KEY, access);
-    localStorage.setItem(REFRESH_KEY, refresh);
+    storeAuthTokens(access, refresh);
     setAccessToken(access);
     setRefreshToken(refresh);
     const profile = await getMe(access, { refreshToken: refresh });
@@ -44,8 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_KEY);
+    clearAuthTokens();
     setAccessToken(null);
     setRefreshToken(null);
     setMe(null);
@@ -58,15 +56,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setMe(null);
         return;
       }
-      try {
-        const profile = await getMe(accessToken, {
-          refreshToken,
-          onAccessToken: persistAccessToken,
-        });
-        if (!cancelled) setMe(profile);
-      } catch {
-        if (!cancelled) setMe(null);
-      }
+      const profile = await loadCurrentProfile({
+        accessToken,
+        refreshToken,
+        persistAccessToken,
+      });
+      if (!cancelled) setMe(profile);
     }
     void loadCurrentUser();
     return () => {

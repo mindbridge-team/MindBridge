@@ -6,27 +6,11 @@ import { type Appointment } from '../../lib/api';
 import { formatUtcDateTime } from '../../lib/dateTime';
 import { APPOINTMENT_STATUS_CLASS } from '../../lib/appointments';
 
-type AppointmentSectionProps = {
-  title: string;
-  emptyState: ReactNode;
-  children: ReactNode;
-};
-
-export function AppointmentSection({ title, emptyState, children }: AppointmentSectionProps) {
-  return (
-    <section className="space-y-3">
-      <h3 className="text-sm font-medium text-foreground">{title}</h3>
-      {children}
-      {children == null ? emptyState : null}
-    </section>
-  );
-}
-
 type AppointmentUpcomingCardProps = {
   appointment: Appointment;
   title: string;
   subtitle?: string;
-  controls?: React.ReactNode;
+  controls?: ReactNode;
 };
 
 export function AppointmentUpcomingCard({
@@ -60,7 +44,7 @@ export function AppointmentUpcomingCard({
 type AppointmentPastCardProps = {
   appointment: Appointment;
   title: string;
-  controls?: React.ReactNode;
+  controls?: ReactNode;
 };
 
 export function AppointmentPastCard({ appointment, title, controls }: AppointmentPastCardProps) {

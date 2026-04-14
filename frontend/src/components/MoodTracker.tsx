@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { type FormEvent } from 'react';
 import { Heart } from 'lucide-react';
 
 import { Button } from './ui/button';
@@ -10,10 +10,9 @@ import {
   CardTitle,
 } from './ui/card';
 import { ErrorMessage, LoadingMessage } from './ui/feedback';
-import { useAuth } from '../contexts/AuthContext';
-import { createMood, getMoods, type MoodEntry } from '../lib/api';
-import { createApiAuth } from '../lib/auth';
+import { type MoodEntry } from '../lib/api';
 import { MOOD_EMOJI, MOOD_LABELS, MOOD_STRIP } from '../data/moodConstants';
+import { useMoodTracker } from './mood-tracker/useMoodTracker';
 import {
   LineChart,
   Line,
@@ -26,27 +25,15 @@ import {
 
 // Demo mood page:
 // log a mood, review recent entries, and see mood trends.
-type MoodChartPoint = {
-  date: string;
-  mood: number;
-};
 
 function formatMoodTimestamp(isoDate: string): string {
   return new Date(isoDate).toLocaleString();
 }
 
-function toChartData(moods: MoodEntry[]): MoodChartPoint[] {
-  return moods
-    .slice(0, 14)
-    .reverse()
-    .map((moodEntry) => ({
-      date: new Date(moodEntry.created_at).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      }),
-      mood: moodEntry.mood_value,
-    }));
-}
+type MoodChartPoint = {
+  date: string;
+  mood: number;
+};
 
 type MoodLogFormProps = {
   moodValue: number | null;
@@ -223,61 +210,19 @@ function MoodChartCard({ chartData }: { chartData: MoodChartPoint[] }) {
 }
 
 export function MoodTracker() {
-  const { accessToken, refreshToken, persistAccessToken } = useAuth();
-  const [moods, setMoods] = useState<MoodEntry[]>([]);
-  const [moodValue, setMoodValue] = useState<number | null>(null);
-  const [note, setNote] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [loadError, setLoadError] = useState('');
-  const [moodsLoading, setMoodsLoading] = useState(true);
-  const auth = createApiAuth(refreshToken, persistAccessToken);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadMoodHistory() {
-      if (!accessToken) return;
-      setMoodsLoading(true);
-      setLoadError('');
-      try {
-        const moodHistory = await getMoods(accessToken, auth);
-        if (!cancelled) setMoods(moodHistory);
-      } catch {
-        if (!cancelled) setLoadError('Failed to load mood history');
-      } finally {
-        if (!cancelled) setMoodsLoading(false);
-      }
-    }
-
-    void loadMoodHistory();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, refreshToken]);
-
-  const chartData = toChartData(moods);
-
-  const resetMoodForm = () => {
-    setMoodValue(null);
-    setNote('');
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!accessToken || moodValue === null) return;
-    setIsLoading(true);
-    setError('');
-    try {
-      const newMood = await createMood(accessToken, moodValue, note.trim(), auth);
-      setMoods((prev) => [newMood, ...prev]);
-      resetMoodForm();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save mood');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    moods,
+    chartData,
+    moodValue,
+    note,
+    isLoading,
+    error,
+    loadError,
+    moodsLoading,
+    setMoodValue,
+    setNote,
+    handleSubmit,
+  } = useMoodTracker();
 
   return (
     <div className="space-y-4 md:space-y-5">

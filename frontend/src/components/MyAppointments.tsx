@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, RefreshCcw } from 'lucide-react';
 
@@ -35,13 +35,16 @@ export function MyAppointments() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const auth = createApiAuth(refreshToken, persistAccessToken);
 
-  async function loadAppointments() {
-    if (!accessToken) return;
+  const loadAppointments = useCallback(async () => {
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
+      const auth = createApiAuth(refreshToken, persistAccessToken);
       const [myAppointments, counsellorList] = await Promise.all([
         getMyAppointments(accessToken, auth),
         getCounsellors(accessToken, auth),
@@ -53,11 +56,11 @@ export function MyAppointments() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [accessToken, refreshToken, persistAccessToken]);
 
   useEffect(() => {
     void loadAppointments();
-  }, [accessToken, refreshToken]);
+  }, [loadAppointments]);
 
   const counsellorById = mapCounsellorsById(counsellors);
   const { upcoming, past } = splitAppointmentsByTime(appointments);

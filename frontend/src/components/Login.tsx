@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -12,12 +13,11 @@ const PRIMARY_BUTTON_CLASSES = `w-full ${PRIMARY_BUTTON_COLORS} h-9 md:h-11 text
 
 interface LoginProps {
   onLogin: (username: string, password: string) => Promise<void>;
-  onSignUpClick: () => void;
 }
 
 type LoginFormEvent = React.FormEvent<HTMLFormElement>;
 
-export function Login({ onLogin, onSignUpClick }: LoginProps) {
+export function Login({ onLogin }: LoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,13 +43,9 @@ export function Login({ onLogin, onSignUpClick }: LoginProps) {
       footerAction={(
         <p className="text-xs md:text-sm text-muted-foreground">
           Need an account?{' '}
-          <button
-            type="button"
-            onClick={onSignUpClick}
-            className="text-[#2d7a8f] hover:underline font-medium"
-          >
+          <Link to="/signup" className="text-[#2d7a8f] hover:underline font-medium">
             Sign up here
-          </button>
+          </Link>
         </p>
       )}
     >

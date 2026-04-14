@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { RefreshCcw } from 'lucide-react';
 
 import { Button } from './ui/button';
@@ -14,6 +14,7 @@ import {
   updateAppointmentStatus,
   type Appointment,
   type AppointmentStatus,
+  type AuthOptions,
 } from '../lib/api';
 import { splitAppointmentsByTime } from '../lib/appointments';
 import { createApiAuth } from '../lib/auth';
@@ -33,6 +34,38 @@ function updateAppointmentInList(
   );
 }
 
+type AppointmentStatusSelectProps = {
+  value: AppointmentStatus;
+  disabled?: boolean;
+  labelled?: boolean;
+  onChange: (next: AppointmentStatus) => void;
+};
+
+function AppointmentStatusSelect({
+  value,
+  disabled = false,
+  labelled = false,
+  onChange,
+}: AppointmentStatusSelectProps) {
+  return (
+    <div className="flex items-center gap-2">
+      {labelled ? <label className="text-xs text-muted-foreground">Status</label> : null}
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as AppointmentStatus)}
+        disabled={disabled}
+        className={STATUS_SELECT_CLASSES}
+      >
+        {APPOINTMENT_STATUS_OPTIONS.map((statusOption) => (
+          <option key={statusOption} value={statusOption}>
+            {statusOption}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 export function CounsellorAppointments() {
   const { accessToken, refreshToken, persistAccessToken } = useAuth();
 
@@ -42,13 +75,16 @@ export function CounsellorAppointments() {
 
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [updateError, setUpdateError] = useState('');
-  const auth = createApiAuth(refreshToken, persistAccessToken);
 
-  async function loadAppointments() {
-    if (!accessToken) return;
+  const loadAppointments = useCallback(async () => {
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
+      const auth = createApiAuth(refreshToken, persistAccessToken);
       const counsellorAppointments = await getCounsellorAppointments(accessToken, auth);
       setAppointments(counsellorAppointments);
     } catch (err) {
@@ -56,20 +92,22 @@ export function CounsellorAppointments() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [accessToken, refreshToken, persistAccessToken]);
 
   useEffect(() => {
     void loadAppointments();
-  }, [accessToken, refreshToken]);
+  }, [loadAppointments]);
 
   const { upcoming, past } = splitAppointmentsByTime(appointments);
+
+  const buildAuth = (): AuthOptions => createApiAuth(refreshToken, persistAccessToken);
 
   const handleStatusChange = async (appointmentId: number, next: AppointmentStatus) => {
     if (!accessToken) return;
     setUpdatingId(appointmentId);
     setUpdateError('');
     try {
-      const updated = await updateAppointmentStatus(accessToken, appointmentId, next, auth);
+      const updated = await updateAppointmentStatus(accessToken, appointmentId, next, buildAuth());
       setAppointments((prev) => updateAppointmentInList(prev, updated));
     } catch (err) {
       setUpdateError(err instanceof Error ? err.message : 'Failed to update status');
@@ -120,23 +158,12 @@ export function CounsellorAppointments() {
                       appointment={appointment}
                       title={appointment.patient}
                       controls={(
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-muted-foreground">Status</label>
-                          <select
-                            value={appointment.status}
-                            onChange={(e) =>
-                              handleStatusChange(appointment.id, e.target.value as AppointmentStatus)
-                            }
-                            disabled={isUpdating}
-                            className={STATUS_SELECT_CLASSES}
-                          >
-                            {APPOINTMENT_STATUS_OPTIONS.map((statusOption) => (
-                              <option key={statusOption} value={statusOption}>
-                                {statusOption}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                        <AppointmentStatusSelect
+                          value={appointment.status}
+                          disabled={isUpdating}
+                          labelled
+                          onChange={(next) => handleStatusChange(appointment.id, next)}
+                        />
                       )}
                     />
                   );
@@ -159,20 +186,11 @@ export function CounsellorAppointments() {
                       appointment={appointment}
                       title={appointment.patient}
                       controls={(
-                        <select
+                        <AppointmentStatusSelect
                           value={appointment.status}
-                          onChange={(e) =>
-                            handleStatusChange(appointment.id, e.target.value as AppointmentStatus)
-                          }
                           disabled={isUpdating}
-                          className={STATUS_SELECT_CLASSES}
-                        >
-                          {APPOINTMENT_STATUS_OPTIONS.map((statusOption) => (
-                            <option key={statusOption} value={statusOption}>
-                              {statusOption}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(next) => handleStatusChange(appointment.id, next)}
+                        />
                       )}
                     />
                   );

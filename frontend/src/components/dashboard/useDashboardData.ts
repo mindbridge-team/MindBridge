@@ -10,6 +10,7 @@ import {
   type MoodEntry,
 } from '../../lib/api';
 import { createApiAuth } from '../../lib/auth';
+import { runWithLoading } from '../../lib/loadState';
 
 type UseDashboardDataArgs = {
   accessToken: string | null;
@@ -47,22 +48,14 @@ export function useDashboardData({
       if (!accessToken) return;
       const auth = createApiAuth(refreshToken, persistAccessToken);
 
-      setMoodsLoading(true);
-      setLoadError('');
-      try {
+      await runWithLoading(setMoodsLoading, setLoadError, 'Failed to load mood history', async () => {
         const moodData = await getMoods(accessToken, auth);
         setMoods(moodData);
-      } catch {
-        setLoadError('Failed to load mood history');
-      } finally {
-        setMoodsLoading(false);
-      }
+      });
 
       if (!me) return;
 
-      setAppointmentsLoading(true);
-      setAppointmentsError('');
-      try {
+      const appointmentsLoaded = await runWithLoading(setAppointmentsLoading, setAppointmentsError, 'Failed to load appointments', async () => {
         if (me.role === 'patient') {
           const [patientAppointments, counsellorList] = await Promise.all([
             getMyAppointments(accessToken, auth),
@@ -75,12 +68,10 @@ export function useDashboardData({
           setAppointments(assignedAppointments);
           setCounsellors([]);
         }
-      } catch (err) {
-        setAppointmentsError(err instanceof Error ? err.message : 'Failed to load appointments');
+      });
+      if (!appointmentsLoaded) {
         setAppointments([]);
         setCounsellors([]);
-      } finally {
-        setAppointmentsLoading(false);
       }
     }
 

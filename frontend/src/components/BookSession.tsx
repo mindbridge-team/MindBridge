@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useState,
-  type FormEvent,
-} from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Calendar, Clock, RefreshCcw, Users } from 'lucide-react';
 
 import { Button } from './ui/button';
@@ -11,26 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { ErrorMessage } from './ui/feedback';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { useAuth } from '../contexts/AuthContext';
-import {
-  createAppointment,
-  getAvailableSlots,
-  getCounsellors,
-  type Counsellor,
-} from '../lib/api';
-import { createApiAuth } from '../lib/auth';
+import { type Counsellor } from '../lib/api';
 import { mapCounsellorsById } from '../lib/appointments';
 import { PRIMARY_BUTTON_COLORS } from '../lib/ui';
+import { useBookSession } from './book-session/useBookSession';
 
 // Demo booking flow:
 // pick a counsellor, choose an open time, then confirm the session.
 const PRIMARY_BUTTON_CLASSES = PRIMARY_BUTTON_COLORS;
 const SELECT_CLASSES = 'w-full h-9 rounded-md border border-input bg-input-background pl-9 pr-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50';
-
-function toUtcDateValue(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
-}
 
 function formatApiSlotTime(slotIso: string): string {
   const slotDate = new Date(slotIso);
@@ -41,13 +25,6 @@ function formatApiSlotTime(slotIso: string): string {
     hour12: true,
     timeZone: 'UTC',
   });
-}
-
-function toFriendlyBookingError(message: string): string {
-  if (/already booked|slot is already|taken|unavailable/i.test(message)) {
-    return `${message} Try refreshing available slots and picking another time.`;
-  }
-  return message;
 }
 
 type CounsellorFieldProps = {
@@ -173,121 +150,30 @@ function SlotField({
 }
 
 export function BookSession() {
-  const navigate = useNavigate();
-  const { accessToken, refreshToken, persistAccessToken } = useAuth();
-
-  const [counsellors, setCounsellors] = useState<Counsellor[]>([]);
-  const [loadingCounsellors, setLoadingCounsellors] = useState(true);
-  const [loadError, setLoadError] = useState('');
-
-  const [counsellorId, setCounsellorId] = useState<number | null>(null);
-  const [selectedDate, setSelectedDate] = useState(() => toUtcDateValue(new Date()));
-
-  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [slotsError, setSlotsError] = useState('');
-
-  const [selectedSlotIso, setSelectedSlotIso] = useState<string>('');
-
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-  const auth = createApiAuth(refreshToken, persistAccessToken);
-  const minSelectableDate = toUtcDateValue(new Date());
-
-  async function loadAvailableSlots() {
-    if (!accessToken || !counsellorId || !selectedDate) return;
-    setLoadingSlots(true);
-    setSlotsError('');
-    try {
-      const slots = await getAvailableSlots(accessToken, counsellorId, selectedDate, auth);
-      setAvailableSlots(slots);
-      setSelectedSlotIso(slots[0] || '');
-    } catch (err) {
-      setSlotsError(err instanceof Error ? err.message : 'Failed to load available slots');
-      setAvailableSlots([]);
-      setSelectedSlotIso('');
-    } finally {
-      setLoadingSlots(false);
-    }
-  }
-
-  useEffect(() => {
-    let cancelled = false;
-    async function loadCounsellors() {
-      if (!accessToken) return;
-      setLoadingCounsellors(true);
-      setLoadError('');
-      try {
-        // Populate the counsellor dropdown for the booking form.
-        const counsellorList = await getCounsellors(accessToken, auth);
-        if (cancelled) return;
-        setCounsellors(counsellorList);
-        setCounsellorId((previousCounsellorId) => previousCounsellorId ?? (counsellorList[0]?.id ?? null));
-      } catch (err) {
-        if (cancelled) return;
-        setLoadError(err instanceof Error ? err.message : 'Failed to load counsellors');
-      } finally {
-        if (!cancelled) setLoadingCounsellors(false);
-      }
-    }
-    void loadCounsellors();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, refreshToken]);
-
-  useEffect(() => {
-    void loadAvailableSlots();
-  }, [accessToken, counsellorId, selectedDate, refreshToken]);
-
-  async function reloadSlots() {
-    setSubmitError('');
-    await loadAvailableSlots();
-  }
+  const {
+    counsellors,
+    loadingCounsellors,
+    loadError,
+    counsellorId,
+    selectedDate,
+    availableSlots,
+    loadingSlots,
+    slotsError,
+    selectedSlotIso,
+    submitting,
+    submitError,
+    minSelectableDate,
+    isSubmitDisabled,
+    setSelectedSlotIso,
+    handleCounsellorChange,
+    handleDateChange,
+    reloadSlots,
+    handleSubmit,
+  } = useBookSession();
 
   const counsellorById = mapCounsellorsById(counsellors);
 
   const selectedCounsellor = counsellorId ? counsellorById.get(counsellorId) : undefined;
-  const isSubmitDisabled =
-    submitting ||
-    loadingCounsellors ||
-    loadingSlots ||
-    counsellors.length === 0 ||
-    availableSlots.length === 0 ||
-    !selectedSlotIso;
-
-  const handleCounsellorChange = (value: string) => {
-    setCounsellorId(value ? Number(value) : null);
-    setSelectedSlotIso('');
-  };
-
-  const handleDateChange = (value: string) => {
-    setSelectedDate(value);
-    setSelectedSlotIso('');
-  };
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!accessToken) return;
-    if (!counsellorId) {
-      setSubmitError('Please select a counsellor.');
-      return;
-    }
-    if (!selectedSlotIso) {
-      setSubmitError('Please choose an available time slot.');
-      return;
-    }
-    setSubmitting(true);
-    setSubmitError('');
-    try {
-      await createAppointment(accessToken, { counsellor: counsellorId, scheduled_time: selectedSlotIso }, auth);
-      navigate('/appointments/my');
-    } catch (err) {
-      const rawError = err instanceof Error ? err.message : 'Failed to book session';
-      setSubmitError(toFriendlyBookingError(rawError));
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   return (
     <div className="max-w-3xl mx-auto">

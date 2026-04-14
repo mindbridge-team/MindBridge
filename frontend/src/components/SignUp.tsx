@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import { AuthPageLayout } from './AuthPageLayout';
-import { FormInputField } from './forms/FormInputField';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 import { register } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { PRIMARY_BUTTON_COLORS } from '../lib/ui';
@@ -11,11 +13,6 @@ import { PRIMARY_BUTTON_COLORS } from '../lib/ui';
 // create an account and log in automatically.
 const INPUT_BASE_CLASSES = 'bg-[#f8fafb] border-border h-9 text-sm';
 const PRIMARY_BUTTON_CLASSES = `w-full ${PRIMARY_BUTTON_COLORS} h-9 text-sm disabled:opacity-50 disabled:cursor-not-allowed`;
-
-interface SignUpProps {
-  onSignUp: () => void;
-  onBackToLogin: () => void;
-}
 
 type SignUpFormData = {
   username: string;
@@ -34,7 +31,7 @@ function getAge(birthdayValue: string): number {
   return monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
 }
 
-export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
+export function SignUp() {
   const { login } = useAuth();
   const [formData, setFormData] = useState<SignUpFormData>({
     username: '',
@@ -95,7 +92,6 @@ export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
     try {
       await register(formData.username, formData.email, formData.password);
       await login(formData.username, formData.password);
-      onSignUp();
     } catch (err) {
       setErrors({
         submit: err instanceof Error ? err.message : 'Registration failed',
@@ -115,82 +111,89 @@ export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
       title="Create Your Account"
       subtitle="Create your account to get started with MindBridge"
       topAction={(
-        <button
-          onClick={onBackToLogin}
-          className="flex items-center gap-1.5 text-sm text-[#2d7a8f] hover:underline mb-4"
-        >
+        <Link to="/login" className="flex items-center gap-1.5 text-sm text-[#2d7a8f] hover:underline mb-4">
           <ArrowLeft className="h-4 w-4" />
           Back to Login
-        </button>
+        </Link>
       )}
       footerAction={(
         <p className="text-xs text-muted-foreground">
           Already have an account?{' '}
-          <button type="button" onClick={onBackToLogin} className="text-[#2d7a8f] hover:underline">
+          <Link to="/login" className="text-[#2d7a8f] hover:underline">
             Sign in here
-          </button>
+          </Link>
         </p>
       )}
     >
           <form onSubmit={handleSubmit} className="space-y-3">
-            <FormInputField
-              id="username"
-              label="Username"
-              type="text"
-              placeholder="your_username"
-              value={formData.username}
-              onChange={(value) => handleInputChange('username', value)}
-              required
-              error={errors.username}
-              inputClassName={INPUT_BASE_CLASSES}
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="username" className="text-sm">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="your_username"
+                value={formData.username}
+                onChange={(event) => handleInputChange('username', event.target.value)}
+                required
+                className={`${INPUT_BASE_CLASSES} ${errors.username ? 'border-red-500' : ''}`}
+              />
+              {errors.username ? <p className="text-xs text-red-500">{errors.username}</p> : null}
+            </div>
 
-            <FormInputField
-              id="email"
-              label="Email"
-              type="email"
-              placeholder="you@example.com"
-              value={formData.email}
-              onChange={(value) => handleInputChange('email', value)}
-              required
-              error={errors.email}
-              inputClassName={INPUT_BASE_CLASSES}
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={formData.email}
+                onChange={(event) => handleInputChange('email', event.target.value)}
+                required
+                className={`${INPUT_BASE_CLASSES} ${errors.email ? 'border-red-500' : ''}`}
+              />
+              {errors.email ? <p className="text-xs text-red-500">{errors.email}</p> : null}
+            </div>
 
-            <FormInputField
-              id="birthday"
-              label="Birthday"
-              type="date"
-              value={formData.birthday}
-              onChange={(value) => handleInputChange('birthday', value)}
-              required
-              error={errors.birthday}
-              inputClassName={INPUT_BASE_CLASSES}
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="birthday" className="text-sm">Birthday</Label>
+              <Input
+                id="birthday"
+                type="date"
+                value={formData.birthday}
+                onChange={(event) => handleInputChange('birthday', event.target.value)}
+                required
+                className={`${INPUT_BASE_CLASSES} ${errors.birthday ? 'border-red-500' : ''}`}
+              />
+              {errors.birthday ? <p className="text-xs text-red-500">{errors.birthday}</p> : null}
+            </div>
 
-            <FormInputField
-              id="password"
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={(value) => handleInputChange('password', value)}
-              required
-              error={errors.password}
-              inputClassName={INPUT_BASE_CLASSES}
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-sm">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={(event) => handleInputChange('password', event.target.value)}
+                required
+                className={`${INPUT_BASE_CLASSES} ${errors.password ? 'border-red-500' : ''}`}
+              />
+              {errors.password ? <p className="text-xs text-red-500">{errors.password}</p> : null}
+            </div>
 
-            <FormInputField
-              id="confirmPassword"
-              label="Confirm Password"
-              type="password"
-              placeholder="••••••••"
-              value={formData.confirmPassword}
-              onChange={(value) => handleInputChange('confirmPassword', value)}
-              required
-              error={errors.confirmPassword}
-              inputClassName={INPUT_BASE_CLASSES}
-            />
+            <div className="space-y-1.5">
+              <Label htmlFor="confirmPassword" className="text-sm">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={(event) => handleInputChange('confirmPassword', event.target.value)}
+                required
+                className={`${INPUT_BASE_CLASSES} ${errors.confirmPassword ? 'border-red-500' : ''}`}
+              />
+              {errors.confirmPassword ? <p className="text-xs text-red-500">{errors.confirmPassword}</p> : null}
+            </div>
 
             {errors.submit && (
               <p className="text-sm text-red-500 bg-red-50 p-2 rounded">{errors.submit}</p>
