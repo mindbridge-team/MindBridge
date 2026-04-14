@@ -1,19 +1,42 @@
 import { useState } from 'react';
-import { Heart, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
+import { AuthPageLayout } from './AuthPageLayout';
+import { FormInputField } from './forms/FormInputField';
 import { register } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { PRIMARY_BUTTON_COLORS } from '../lib/ui';
+
+// Demo sign-up page:
+// create an account and log in automatically.
+const INPUT_BASE_CLASSES = 'bg-[#f8fafb] border-border h-9 text-sm';
+const PRIMARY_BUTTON_CLASSES = `w-full ${PRIMARY_BUTTON_COLORS} h-9 text-sm disabled:opacity-50 disabled:cursor-not-allowed`;
 
 interface SignUpProps {
   onSignUp: () => void;
   onBackToLogin: () => void;
 }
 
+type SignUpFormData = {
+  username: string;
+  email: string;
+  birthday: string;
+  password: string;
+  confirmPassword: string;
+};
+
+function getAge(birthdayValue: string): number {
+  const birthDate = new Date(birthdayValue);
+  const today = new Date();
+  const age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  const dayDiff = today.getDate() - birthDate.getDate();
+  return monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+}
+
 export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
   const { login } = useAuth();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SignUpFormData>({
     username: '',
     email: '',
     birthday: '',
@@ -41,10 +64,7 @@ export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
     } else {
       const birthDate = new Date(formData.birthday);
       const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      const dayDiff = today.getDate() - birthDate.getDate();
-      const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+      const actualAge = getAge(formData.birthday);
 
       if (actualAge < 13) {
         newErrors.birthday = 'You must be at least 13 years old';
@@ -91,96 +111,86 @@ export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e8f4f7] via-[#f8fafb] to-[#d4e9f0] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <button
-            onClick={onBackToLogin}
-            className="flex items-center gap-1.5 text-sm text-[#2d7a8f] hover:underline mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Login
+    <AuthPageLayout
+      title="Create Your Account"
+      subtitle="Create your account to get started with MindBridge"
+      topAction={(
+        <button
+          onClick={onBackToLogin}
+          className="flex items-center gap-1.5 text-sm text-[#2d7a8f] hover:underline mb-4"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Login
+        </button>
+      )}
+      footerAction={(
+        <p className="text-xs text-muted-foreground">
+          Already have an account?{' '}
+          <button type="button" onClick={onBackToLogin} className="text-[#2d7a8f] hover:underline">
+            Sign in here
           </button>
-
-          <div className="flex flex-col items-center mb-6">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#4db8a8] to-[#2d7a8f] flex items-center justify-center text-white mb-3">
-              <Heart className="h-6 w-6" fill="currentColor" />
-            </div>
-            <h1 className="text-xl text-[#2d7a8f]">Create Your Account</h1>
-            <p className="text-xs text-muted-foreground mt-1 text-center">
-              Join MindBridge and start your wellness journey
-            </p>
-          </div>
-
+        </p>
+      )}
+    >
           <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="username" className="text-sm">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="your_username"
-                value={formData.username}
-                onChange={(e) => handleInputChange('username', e.target.value)}
-                required
-                className={`bg-[#f8fafb] border-border h-9 text-sm ${errors.username ? 'border-red-500' : ''}`}
-              />
-              {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
-            </div>
+            <FormInputField
+              id="username"
+              label="Username"
+              type="text"
+              placeholder="your_username"
+              value={formData.username}
+              onChange={(value) => handleInputChange('username', value)}
+              required
+              error={errors.username}
+              inputClassName={INPUT_BASE_CLASSES}
+            />
 
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                required
-                className={`bg-[#f8fafb] border-border h-9 text-sm ${errors.email ? 'border-red-500' : ''}`}
-              />
-              {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
-            </div>
+            <FormInputField
+              id="email"
+              label="Email"
+              type="email"
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={(value) => handleInputChange('email', value)}
+              required
+              error={errors.email}
+              inputClassName={INPUT_BASE_CLASSES}
+            />
 
-            <div className="space-y-1.5">
-              <Label htmlFor="birthday" className="text-sm">Birthday</Label>
-              <Input
-                id="birthday"
-                type="date"
-                value={formData.birthday}
-                onChange={(e) => handleInputChange('birthday', e.target.value)}
-                required
-                className={`bg-[#f8fafb] border-border h-9 text-sm ${errors.birthday ? 'border-red-500' : ''}`}
-              />
-              {errors.birthday && <p className="text-xs text-red-500">{errors.birthday}</p>}
-            </div>
+            <FormInputField
+              id="birthday"
+              label="Birthday"
+              type="date"
+              value={formData.birthday}
+              onChange={(value) => handleInputChange('birthday', value)}
+              required
+              error={errors.birthday}
+              inputClassName={INPUT_BASE_CLASSES}
+            />
 
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-sm">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-                required
-                className={`bg-[#f8fafb] border-border h-9 text-sm ${errors.password ? 'border-red-500' : ''}`}
-              />
-              {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
-            </div>
+            <FormInputField
+              id="password"
+              label="Password"
+              type="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={(value) => handleInputChange('password', value)}
+              required
+              error={errors.password}
+              inputClassName={INPUT_BASE_CLASSES}
+            />
 
-            <div className="space-y-1.5">
-              <Label htmlFor="confirmPassword" className="text-sm">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                required
-                className={`bg-[#f8fafb] border-border h-9 text-sm ${errors.confirmPassword ? 'border-red-500' : ''}`}
-              />
-              {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
-            </div>
+            <FormInputField
+              id="confirmPassword"
+              label="Confirm Password"
+              type="password"
+              placeholder="••••••••"
+              value={formData.confirmPassword}
+              onChange={(value) => handleInputChange('confirmPassword', value)}
+              required
+              error={errors.confirmPassword}
+              inputClassName={INPUT_BASE_CLASSES}
+            />
 
             {errors.submit && (
               <p className="text-sm text-red-500 bg-red-50 p-2 rounded">{errors.submit}</p>
@@ -200,7 +210,7 @@ export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#2d7a8f] hover:bg-[#236272] h-9 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className={PRIMARY_BUTTON_CLASSES}
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
@@ -212,24 +222,6 @@ export function SignUp({ onSignUp, onBackToLogin }: SignUpProps) {
               )}
             </Button>
           </form>
-
-          <div className="mt-4 text-center">
-            <p className="text-xs text-muted-foreground">
-              Already have an account?{' '}
-              <button type="button" onClick={onBackToLogin} className="text-[#2d7a8f] hover:underline">
-                Sign in here
-              </button>
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 text-center text-xs text-muted-foreground">
-          <p>
-            In crisis? Call the National Suicide Prevention Lifeline:{' '}
-            <a href="tel:988" className="text-[#2d7a8f] hover:underline">988</a>
-          </p>
-        </div>
-      </div>
-    </div>
+    </AuthPageLayout>
   );
 }
