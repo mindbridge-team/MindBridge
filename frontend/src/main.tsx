@@ -5,6 +5,8 @@ import './index.css';
 import App from './App.tsx';
 import { AuthProvider } from './contexts/AuthContext';
 
+// Frontend starting point:
+// wrap the app with router/auth, then render it.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>

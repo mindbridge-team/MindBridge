@@ -1,9 +1,15 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { getMe, login as apiLogin, type Me } from '../lib/api';
 
+// Shared auth state for demo:
+// stores tokens, current user, and login/logout behavior.
 const TOKEN_KEY = 'mindbridge_access_token';
 const REFRESH_KEY = 'mindbridge_refresh_token';
+
+function readStoredToken(key: string): string | null {
+  return localStorage.getItem(key);
+}
 
 type AuthContextType = {
   isLoggedIn: boolean;
@@ -18,20 +24,16 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [accessToken, setAccessToken] = useState<string | null>(() =>
-    localStorage.getItem(TOKEN_KEY)
-  );
-  const [refreshToken, setRefreshToken] = useState<string | null>(() =>
-    localStorage.getItem(REFRESH_KEY)
-  );
+  const [accessToken, setAccessToken] = useState<string | null>(() => readStoredToken(TOKEN_KEY));
+  const [refreshToken, setRefreshToken] = useState<string | null>(() => readStoredToken(REFRESH_KEY));
   const [me, setMe] = useState<Me | null>(null);
 
-  const persistAccessToken = useCallback((token: string) => {
+  function persistAccessToken(token: string) {
     localStorage.setItem(TOKEN_KEY, token);
     setAccessToken(token);
-  }, []);
+  }
 
-  const login = useCallback(async (username: string, password: string) => {
+  async function login(username: string, password: string) {
     const { access, refresh } = await apiLogin(username, password);
     localStorage.setItem(TOKEN_KEY, access);
     localStorage.setItem(REFRESH_KEY, refresh);
@@ -39,19 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRefreshToken(refresh);
     const profile = await getMe(access, { refreshToken: refresh });
     setMe(profile);
-  }, []);
+  }
 
-  const logout = useCallback(() => {
+  function logout() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_KEY);
     setAccessToken(null);
     setRefreshToken(null);
     setMe(null);
-  }, []);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    async function run() {
+    async function loadCurrentUser() {
       if (!accessToken) {
         if (!cancelled) setMe(null);
         return;
@@ -66,11 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setMe(null);
       }
     }
-    void run();
+    void loadCurrentUser();
     return () => {
       cancelled = true;
     };
-  }, [accessToken, refreshToken, persistAccessToken]);
+  }, [accessToken, refreshToken]);
 
   return (
     <AuthContext.Provider
@@ -89,8 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  const authContextValue = useContext(AuthContext);
+  if (!authContextValue) throw new Error('useAuth must be used within AuthProvider');
+  return authContextValue;
 }

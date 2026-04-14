@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MindBridge — Interactive Codebase Study Guide</title>
+  <style>
+    :root {
+      --bg: #f6f9fb;
+      --surface: #ffffff;
+      --text: #1a2b33;
+      --muted: #5a6f78;
+      --accent: #2d7a8f;
+      --accent-soft: #e8f4f7;
+      --border: #cfe7ee;
+      --ok: #0d7a52;
+      --warn: #b45309;
+    }
+    [data-theme="dark"] {
+      --bg: #0f1619;
+      --surface: #1a2429;
+      --text: #e8f0f3;
+      --muted: #9fb0b8;
+      --accent: #5eb3c4;
+      --accent-soft: #1e3a42;
+      --border: #2a3f48;
+      --ok: #4ade80;
+      --warn: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      font-size: 16px;
+    }
+    a { color: var(--accent); }
+    code, .path {
+      font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.88em;
+      background: var(--accent-soft);
+      padding: 0.12em 0.35em;
+      border-radius: 4px;
+    }
+    pre.tree {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      line-height: 1.45;
+      margin: 0.75rem 0;
+    }
+    header.hero {
+      background: linear-gradient(135deg, var(--accent-soft), var(--bg));
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 1.25rem 2rem;
+    }
+    header.hero h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.35rem, 4vw, 1.85rem);
+      letter-spacing: -0.02em;
+    }
+    header.hero p { margin: 0; color: var(--muted); max-width: 52rem; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+      margin-top: 1rem;
+    }
+    .toolbar input[type="search"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.55rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .toolbar button {
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .toolbar button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 1200px;
+      margin: 0 auto;
+      gap: 0;
+    }
+    @media (min-width: 900px) {
+      .layout {
+        grid-template-columns: 240px minmax(0, 1fr);
+        align-items: start;
+      }
+    }
+    nav.toc {
+      position: sticky;
+      top: 0;
+      padding: 1rem 1rem 2rem;
+      max-height: 100vh;
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      background: var(--bg);
+      display: none;
+    }
+    @media (min-width: 900px) {
+      nav.toc { display: block; }
+    }
+    nav.toc h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: 1rem 0 0.4rem;
+    }
+    nav.toc a {
+      display: block;
+      padding: 0.25rem 0;
+      text-decoration: none;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+    nav.toc a:hover { color: var(--accent); }
+    main.content { padding: 1.25rem 1.25rem 3rem; min-width: 0; }
+    section.block {
+      margin-bottom: 2.25rem;
+      scroll-margin-top: 1rem;
+    }
+    section.block h2 {
+      font-size: 1.35rem;
+      margin: 0 0 0.75rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 2px solid var(--accent);
+    }
+    section.block h3 { font-size: 1.1rem; margin: 1.25rem 0 0.5rem; }
+    section.block h4 { font-size: 1rem; margin: 1rem 0 0.35rem; color: var(--muted); }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--surface);
+      padding: 0.85rem 1rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1rem 0;
+      border: 1px solid var(--border);
+    }
+    details.file-ref {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 0.45rem 0;
+    }
+    details.file-ref > summary {
+      cursor: pointer;
+      padding: 0.55rem 0.85rem;
+      font-weight: 600;
+      list-style-position: outside;
+    }
+    details.file-ref .inner {
+      padding: 0 0.85rem 0.85rem;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    details.file-ref ul { margin: 0.35rem 0 0 1.1rem; }
+    table.api {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin: 0.75rem 0;
+    }
+    table.api th, table.api td {
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.55rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.api th { background: var(--accent-soft); }
+    .hidden-search { display: none !important; }
+    .check-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin: 0.35rem 0;
+    }
+    .check-row input { margin-top: 0.35rem; }
+    quiz details { margin: 0.75rem 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.5rem 0.85rem; }
+    .mobile-toc { margin-bottom: 1rem; }
+    @media (min-width: 900px) { .mobile-toc { display: none; } }
+    footer.note {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <h1>MindBridge — Interactive codebase study guide</h1>
+    <p>
+      A self-contained page you can save and open <strong>offline</strong> (File → Save As in your browser).
+      Written for readers with <strong>no prior programming experience</strong>; terms are explained before jargon.
+    </p>
+    <div class="toolbar">
+      <label class="visually-hidden" for="q">Search</label>
+      <input type="search" id="q" placeholder="Search this guide (e.g. JWT, MoodEntry, BookSession)…" autocomplete="off" />
+      <button type="button" class="primary" id="expandAll">Expand all file details</button>
+      <button type="button" id="collapseAll">Collapse all</button>
+      <button type="button" id="themeToggle" title="Toggle light/dark">Theme</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="toc" aria-label="Table of contents">
+      <h2>Start here</h2>
+      <a href="#how-to-use">How to use</a>
+      <a href="#concepts">Ideas &amp; vocabulary</a>
+      <a href="#architecture">How pieces connect</a>
+      <a href="#structure">Project structure</a>
+      <a href="#study-path">Suggested study path</a>
+      <a href="#checklist">Progress checklist</a>
+      <h2>Deep dives</h2>
+      <a href="#frontend">Frontend (React)</a>
+      <a href="#backend">Backend (Django)</a>
+      <a href="#rasa">Rasa chatbot</a>
+      <a href="#api-map">API map</a>
+      <a href="#quiz">Self-check quiz</a>
+      <h2>Reference</h2>
+      <a href="#files-root">All files explained</a>
+    </nav>
+
+    <main class="content">
+      <div class="mobile-toc callout">
+        <strong>Tip:</strong> On a wide screen, a sidebar table of contents appears. On mobile, use the headings and search.
+      </div>
+
+      <section class="block searchable" id="how-to-use" data-keywords="offline save guide">
+        <h2>How to use this guide</h2>
+        <ol>
+          <li>Read <a href="#concepts">Ideas &amp; vocabulary</a> once — it defines words used everywhere else.</li>
+          <li>Skim <a href="#architecture">How pieces connect</a> so you know what “frontend” and “backend” mean here.</li>
+          <li>Open the real project in an editor alongside <a href="#files-root">All files explained</a>.</li>
+          <li>Use <strong>Search</strong> at the top to jump to a filename or topic.</li>
+          <li>Expand gray boxes under “All files explained” to see what each file does and named functions/classes inside.</li>
+        </ol>
+        <div class="callout">
+          <strong>What is “code”?</strong> Text files that humans wrote so a computer can follow step-by-step instructions.
+          This project uses two main languages: <strong>TypeScript</strong> (for the website UI) and <strong>Python</strong> (for the server and database).
+        </div>
+      </section>
+
+      <section class="block searchable" id="concepts" data-keywords="beginner vocabulary API JSON token">
+        <h2>Ideas &amp; vocabulary (beginner)</h2>
+        <h3>Repository (repo)</h3>
+        <p>A folder of files tracked with version control (here: Git). The MindBridge repo contains <code>frontend/</code>, <code>backend/</code>, and docs.</p>
+        <h3>User interface (UI)</h3>
+        <p>What people see and click in the browser: buttons, forms, pages. Built with <strong>React</strong> in <code>frontend/</code>.</p>
+        <h3>Server / backend</h3>
+        <p>A program that runs on a machine and answers <strong>HTTP requests</strong>. Here it is <strong>Django</strong> in <code>backend/</code>. It talks to <strong>PostgreSQL</strong> (a database) to store moods, users, appointments.</p>
+        <h3>API (Application Programming Interface)</h3>
+        <p>A set of URLs the frontend calls to read or write data. Example: “GET my moods” returns a list. MindBridge uses JSON (text that looks like structured data) in request and response bodies.</p>
+        <h3>Authentication &amp; JWT</h3>
+        <p>After login, the server returns <strong>tokens</strong> (long secret strings). The frontend sends an <strong>access token</strong> on each request. When it expires, the <strong>refresh token</strong> can be traded for a new access token (see <code>frontend/src/lib/api.ts</code>).</p>
+        <h3>Role-based access</h3>
+        <p>Users have a <strong>role</strong>: <code>patient</code>, <code>counsellor</code>, or <code>admin</code> (stored on <code>Profile</code> in the database). The UI and the API both restrict what each role can do.</p>
+        <h3>Routing</h3>
+        <p>In the browser, the URL path (like <code>/mood</code>) picks which React page to show. In Django, URL patterns map paths to Python <strong>views</strong>.</p>
+        <h3>Model / migration</h3>
+        <p>A <strong>model</strong> is a Python class describing a database table. A <strong>migration</strong> is a recorded change to the database schema (applied with Django commands).</p>
+        <h3>Rasa</h3>
+        <p>A separate conversational AI service. Django’s <code>chatbot</code> app forwards messages to Rasa’s HTTP webhook.</p>
+      </section>
+
+      <section class="block searchable" id="architecture" data-keywords="diagram flow browser django postgres rasa">
+        <h2>How the pieces connect</h2>
+        <pre class="tree" aria-label="Architecture diagram">
+┌─────────────────┐     HTTP (JSON)      ┌──────────────────┐     SQL      ┌────────────┐
+│  Web browser    │ ◄──────────────────► │  Django API      │ ◄──────────► │ PostgreSQL │
+│  React (Vite)   │   JWT in headers     │  REST Framework    │              │  database  │
+└────────┬────────┘                      └────────┬─────────┘              └────────────┘
+         │                                        │
+         │  optional: user opens chat            │  POST to Rasa webhook
+         │  (future widget; Django proxy exists)  ▼
+         │                                 ┌──────────────────┐
+         └───────────────────────────────► │  Rasa server     │
+                                           │  NLU + actions   │
+                                           └──────────────────┘
+        </pre>
+        <p><strong>Important:</strong> The <code>Resources</code> page uses a <strong>static list</strong> in <code>frontend/src/data/resourcesData.ts</code> (curated links). The Django <code>resources</code> app defines database models but has no public API views yet — the UI does not load resources from the database today.</p>
+      </section>
+
+      <section class="block searchable" id="structure" data-keywords="tree folder files">
+        <h2>Project structure (overview)</h2>
+        <p>Below is the logical layout. Generated folders like <code>node_modules/</code>, <code>__pycache__/</code>, <code>frontend/dist/</code>, and <code>backend/staticfiles/</code> are omitted — they are outputs or dependencies, not hand-authored app logic.</p>
+        <pre class="tree">MindBridge/
+├── README.md
+├── docs/
+│   └── MindBridge-Interactive-Study-Guide.html   ← this file
+├── frontend/                    ← React + TypeScript (runs in browser)
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── eslint.config.js
+│   ├── tsconfig*.json
+│   └── src/
+│       ├── main.tsx             ← starts React; wraps App with router + auth
+│       ├── App.tsx              ← routes & login gate
+│       ├── App.css, index.css
+│       ├── contexts/
+│       │   └── AuthContext.tsx
+│       ├── lib/
+│       │   └── api.ts           ← all fetch() calls to Django
+│       ├── data/
+│       │   ├── moodConstants.ts
+│       │   └── resourcesData.ts
+│       └── components/          ← screens + reusable UI
+├── backend/                     ← Django + PostgreSQL
+│   ├── manage.py
+│   ├── .env                     ← secrets (not committed); DB + Django keys
+│   ├── mindbridge_api/          ← project settings & root URLs
+│   ├── accounts/                ← register, login (JWT), profile, counsellors list
+│   ├── moods/                   ← mood CRUD API
+│   ├── appointments/            ← booking, slots, status updates
+│   ├── chatbot/                 ← proxy to Rasa
+│   ├── resources/               ← DB models (API not wired for UI yet)
+│   ├── communication/           ← DB models for rooms/messages (UI “coming soon”)
+│   └── rasa/                    ← Rasa config, training data, custom actions
+└── (optional local venvs, etc.)
+        </pre>
+      </section>
+
+      <section class="block searchable" id="study-path" data-keywords="order learn">
+        <h2>Suggested study path</h2>
+        <ol>
+          <li><code>frontend/src/main.tsx</code> → <code>App.tsx</code> → <code>AuthContext.tsx</code> (how login state works).</li>
+          <li><code>frontend/src/lib/api.ts</code> (every network call in one place).</li>
+          <li>Pick one screen: e.g. <code>MoodTracker.tsx</code> and trace it to <code>moods/views.py</code>.</li>
+          <li>Read <code>backend/mindbridge_api/urls.py</code> then each app’s <code>urls.py</code>.</li>
+          <li>Read <code>appointments/views.py</code> + <code>permissions.py</code> for role checks.</li>
+          <li>Skim <code>backend/rasa/domain.yml</code> and <code>actions/actions.py</code> for chatbot behavior.</li>
+        </ol>
+      </section>
+
+      <section class="block searchable" id="checklist" data-keywords="progress checklist">
+        <h2>Progress checklist (saved in this browser)</h2>
+        <p>Checking a box stores your progress in <code>localStorage</code> — it stays until you clear site data.</p>
+        <div id="checklistRoot"></div>
+      </section>
+
+      <section class="block searchable" id="frontend" data-keywords="React TypeScript Vite components">
+        <h2>Frontend deep dive</h2>
+        <p>The frontend is a <strong>single-page application</strong>: one HTML shell loads JavaScript that swaps “pages” without full reloads. <strong>Vite</strong> bundles TypeScript during development.</p>
+        <h3>Entry &amp; routing</h3>
+        <ul>
+          <li><code>main.tsx</code> mounts React into <code>#root</code>, wraps <code>BrowserRouter</code> and <code>AuthProvider</code>.</li>
+          <li><code>App.tsx</code> shows <code>Login</code> / <code>SignUp</code> if not authenticated; otherwise <code>Routes</code> inside <code>MainLayout</code>.</li>
+        </ul>
+        <h3>Auth</h3>
+        <p><code>AuthContext</code> holds tokens and <code>me</code> (user profile). Tokens persist in <code>localStorage</code> under fixed keys.</p>
+        <h3>API layer</h3>
+        <p><code>api.ts</code> exports async functions that call Django. Many repeat the pattern: try request → if 401, refresh token → retry once.</p>
+      </section>
+
+      <section class="block searchable" id="backend" data-keywords="Django REST PostgreSQL serializers views">
+        <h2>Backend deep dive</h2>
+        <p><strong>Django</strong> organizes code into <strong>apps</strong> (folders like <code>moods/</code>). <strong>Django REST Framework</strong> turns Python classes into JSON APIs. <strong>Simple JWT</strong> handles login tokens.</p>
+        <h3>Request lifecycle (simplified)</h3>
+        <ol>
+          <li>Browser sends HTTP request to e.g. <code>/api/moods/</code>.</li>
+          <li><code>mindbridge_api/urls.py</code> includes <code>moods.urls</code>.</li>
+          <li>A <strong>view</strong> runs, checks permissions, reads/writes models via serializers.</li>
+          <li>Response JSON goes back to the browser.</li>
+        </ol>
+      </section>
+
+      <section class="block searchable" id="rasa" data-keywords="nlu stories domain actions webhook">
+        <h2>Rasa chatbot</h2>
+        <p>Training data lives under <code>backend/rasa/data/</code>. <code>domain.yml</code> lists intents, responses, and actions. Custom Python behavior is in <code>actions/actions.py</code> (classes extending Rasa SDK <code>Action</code>). Django posts to Rasa’s REST webhook; see <code>chatbot/views.py</code> <code>chatbot_message</code>.</p>
+      </section>
+
+      <section class="block searchable" id="api-map" data-keywords="endpoints URL">
+        <h2>API map (Django)</h2>
+        <p>Base URL is typically <code>http://127.0.0.1:8000</code> in development. Prefix <code>/api/</code> as below.</p>
+        <table class="api">
+          <thead><tr><th>Method &amp; path</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>POST /api/auth/register/</code></td><td>Create user (AllowAny).</td></tr>
+            <tr><td><code>POST /api/auth/login/</code></td><td>JWT access + refresh tokens.</td></tr>
+            <tr><td><code>POST /api/auth/refresh/</code></td><td>New access token from refresh.</td></tr>
+            <tr><td><code>GET /api/auth/me/</code></td><td>Current user + role (authenticated).</td></tr>
+            <tr><td><code>GET /api/auth/counsellors/</code></td><td>Verified counsellors list.</td></tr>
+            <tr><td><code>GET,POST /api/moods/</code></td><td>List or create moods for current user.</td></tr>
+            <tr><td><code>POST /api/appointments/create/</code></td><td>Patient creates appointment.</td></tr>
+            <tr><td><code>GET /api/appointments/my/</code></td><td>Patient’s appointments.</td></tr>
+            <tr><td><code>GET /api/appointments/counsellor/</code></td><td>Counsellor’s appointments.</td></tr>
+            <tr><td><code>PATCH /api/appointments/&lt;id&gt;/</code></td><td>Counsellor updates status.</td></tr>
+            <tr><td><code>GET /api/appointments/available/&lt;counsellor_id&gt;/?date=YYYY-MM-DD</code></td><td>Free hourly slots.</td></tr>
+            <tr><td><code>POST /api/chatbot/message/</code></td><td>Proxy to Rasa (AllowAny in code).</td></tr>
+          </tbody>
+        </table>
+        <p class="callout"><strong>Note:</strong> Backend permission <code>IsCounsellor</code> only allows role <code>counsellor</code>. The frontend treats <code>admin</code> like a counsellor for navigation; if admins need API access, the permission class would need updating.</p>
+      </section>
+
+      <section class="block searchable" id="quiz" data-keywords="test questions">
+        <h2>Self-check quiz</h2>
+        <quiz>
+          <details><summary>1. What file centralizes HTTP calls from React to Django?</summary>
+            <p><strong>Answer:</strong> <code>frontend/src/lib/api.ts</code></p>
+          </details>
+          <details><summary>2. Where is the user’s role (patient/counsellor/admin) stored in the database?</summary>
+            <p><strong>Answer:</strong> On the <code>Profile</code> model linked one-to-one to Django’s <code>User</code> (<code>backend/accounts/models.py</code>).</p>
+          </details>
+          <details><summary>3. Which view builds the list of available appointment hours?</summary>
+            <p><strong>Answer:</strong> <code>AvailableSlotsView.get</code> in <code>backend/appointments/views.py</code>.</p>
+          </details>
+          <details><summary>4. Why does the app send an <code>Authorization: Bearer …</code> header?</summary>
+            <p><strong>Answer:</strong> To prove the request comes from a logged-in user (JWT access token).</p>
+          </details>
+          <details><summary>5. Are wellness resources on the Resources page loaded from PostgreSQL?</summary>
+            <p><strong>Answer:</strong> No — they come from the static array in <code>frontend/src/data/resourcesData.ts</code>. Django <code>Resource</code> models exist for future use.</p>
+          </details>
+        </quiz>
+      </section>
+
+      <section class="block searchable" id="files-root" data-keywords="every file functions classes">
+        <h2>All files explained</h2>
+        <p>Click a row to expand. <strong>Functions</strong> and <strong>classes</strong> listed are the main named units a beginner can search for in the file.</p>
+        <div id="fileRefs"></div>
+      </section>
+
+      <footer class="note">
+        <p>Generated for the MindBridge school project. If your tree differs (new files or renamed paths), compare with the repo and update this HTML copy. Environment variables expected in <code>backend/.env</code> include <code>DB_NAME</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DJANGO_SECRET_KEY</code>, <code>DJANGO_DEBUG</code>, and optionally <code>RASA_URL</code>. Frontend uses <code>VITE_API_URL</code> to point at the API.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      var STORAGE_CHECK = 'mindbridge-study-checklist-v1';
+      var STORAGE_THEME = 'mindbridge-study-theme';
+
+      var checklistItems = [
+        { id: 'c1', label: 'Read vocabulary section' },
+        { id: 'c2', label: 'Trace login: Login.tsx → AuthContext → api.login' },
+        { id: 'c3', label: 'Trace mood save: MoodTracker → createMood → MoodEntryListCreateView' },
+        { id: 'c4', label: 'Read backend/mindbridge_api/urls.py and all app urls.py files' },
+        { id: 'c5', label: 'Understand AvailableSlotsView + AppointmentSerializer.validate' },
+        { id: 'c6', label: 'Skim Rasa domain.yml + actions.py' }
+      ];
+
+      function loadChecks() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_CHECK) || '{}'); } catch (e) { return {}; }
+      }
+      function saveChecks(obj) {
+        localStorage.setItem(STORAGE_CHECK, JSON.stringify(obj));
+      }
+
+      var root = document.getElementById('checklistRoot');
+      var state = loadChecks();
+      checklistItems.forEach(function (item) {
+        var row = document.createElement('div');
+        row.className = 'check-row';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.id = item.id;
+        cb.checked = !!state[item.id];
+        cb.addEventListener('change', function () {
+          state[item.id] = cb.checked;
+          saveChecks(state);
+        });
+        var lab = document.createElement('label');
+        lab.htmlFor = item.id;
+        lab.textContent = item.label;
+        row.appendChild(cb);
+        row.appendChild(lab);
+        root.appendChild(row);
+      });
+
+      var themeBtn = document.getElementById('themeToggle');
+      function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+        localStorage.setItem(STORAGE_THEME, t);
+      }
+      applyTheme(localStorage.getItem(STORAGE_THEME) || 'light');
+      themeBtn.addEventListener('click', function () {
+        var cur = document.documentElement.getAttribute('data-theme');
+        applyTheme(cur === 'dark' ? 'light' : 'dark');
+      });
+
+      var files = [
+        { path: 'README.md', desc: 'Root project overview: how to run frontend/backend and tech stack.', names: [] },
+        { path: 'frontend/README.md', desc: 'Frontend-specific setup notes.', names: [] },
+        { path: 'frontend/index.html', desc: 'HTML shell with div#root where React mounts.', names: [] },
+        { path: 'frontend/package.json', desc: 'Lists npm dependencies and scripts (dev, build, lint).', names: [] },
+        { path: 'frontend/package-lock.json', desc: 'Locked dependency versions for reproducible installs.', names: [] },
+        { path: 'frontend/vite.config.ts', desc: 'Vite bundler configuration for React + TS.', names: [] },
+        { path: 'frontend/tsconfig.json', desc: 'TypeScript compiler options (root).', names: [] },
+        { path: 'frontend/tsconfig.app.json', desc: 'TS config for application source.', names: [] },
+        { path: 'frontend/tsconfig.node.json', desc: 'TS config for Node tooling (e.g. Vite config).', names: [] },
+        { path: 'frontend/eslint.config.js', desc: 'ESLint rules for code quality.', names: [] },
+        { path: 'frontend/src/main.tsx', desc: 'Application entry: createRoot, StrictMode, BrowserRouter, AuthProvider, App.', names: [] },
+        { path: 'frontend/src/App.tsx', desc: 'Top-level routing and auth gate; role-based redirects.', names: ['App (default export)'] },
+        { path: 'frontend/src/App.css', desc: 'Styles scoped/imported for App.', names: [] },
+        { path: 'frontend/src/index.css', desc: 'Global CSS (Tailwind layers / variables).', names: [] },
+        { path: 'frontend/src/contexts/AuthContext.tsx', desc: 'React context: tokens, me profile, login/logout, persistAccessToken, localStorage sync.', names: ['AuthProvider', 'useAuth'] },
+        { path: 'frontend/src/lib/api.ts', desc: 'fetch wrappers for Django; JWT refresh retry pattern; shared TS types.', names: ['register', 'login', 'refreshAccessToken', 'getMe', 'getMoods', 'createMood', 'getCounsellors', 'getMyAppointments', 'getCounsellorAppointments', 'getAvailableSlots', 'updateAppointmentStatus', 'createAppointment', 'authHeaders', 'fetchMeOnce', 'fetchMoodsOnce', 'types: Me, MoodEntry, Counsellor, Appointment, …'] },
+        { path: 'frontend/src/data/moodConstants.ts', desc: 'Maps mood numbers to labels/emojis and picker strip config.', names: ['MOOD_LABELS', 'MOOD_EMOJI', 'MOOD_STRIP'] },
+        { path: 'frontend/src/data/resourcesData.ts', desc: 'Large static list of wellness links + helpers for dashboard/resources UI.', names: ['resources', 'FEATURED_ALL_COUNT', 'getDashboardFeaturedResources', 'countByType', 'type Resource', 'ytThumb'] },
+        { path: 'frontend/src/components/Login.tsx', desc: 'Sign-in form; calls onLogin prop.', names: ['Login'] },
+        { path: 'frontend/src/components/SignUp.tsx', desc: 'Registration + client-side validation; register() then login().', names: ['SignUp', 'validateForm'] },
+        { path: 'frontend/src/components/MainLayout.tsx', desc: 'Sidebar, mobile nav, outlet for child routes, chat launcher state.', names: ['MainLayout'] },
+        { path: 'frontend/src/components/MoodDashboard.tsx', desc: 'Home dashboard: streak, today mood, appointments preview, resource cards.', names: ['MoodDashboard', 'formatDayKey', 'isSameDay', 'getTodaysLatestMood', 'computeStreak', 'parseApiDate', 'formatUtcDateTime', 'getResourceIcon'] },
+        { path: 'frontend/src/components/MoodTracker.tsx', desc: 'Log mood + list history + Recharts line chart.', names: ['MoodTracker'] },
+        { path: 'frontend/src/components/Resources.tsx', desc: 'Filterable resource grid from resourcesData.', names: ['Resources', 'getResourceIcon', 'getResourceButton', 'getBadgeColor'] },
+        { path: 'frontend/src/components/BookSession.tsx', desc: 'Pick counsellor, date, slot; createAppointment; UTC date helpers.', names: ['BookSession', 'toUtcDateValue', 'formatApiSlotTime', 'slotUtcDateString', 'formatUtcSlotSummary'] },
+        { path: 'frontend/src/components/MyAppointments.tsx', desc: 'Patient upcoming/past appointments with counsellor names.', names: ['MyAppointments', 'parseApiDate', 'formatUtcDateTime', 'statusClass', 'load'] },
+        { path: 'frontend/src/components/CounsellorAppointments.tsx', desc: 'Counsellor lists + status dropdown calling updateAppointmentStatus.', names: ['CounsellorAppointments', 'handleStatusChange', 'parseApiDate', 'formatUtcDateTime', 'statusClass'] },
+        { path: 'frontend/src/components/ChatBubble.tsx', desc: 'Floating FAB + slide panel; placeholder mount for future chat plugin.', names: ['ChatBubble'] },
+        { path: 'frontend/src/components/ImageWithFallback.tsx', desc: 'img with onError → placeholder icon.', names: ['ImageWithFallback'] },
+        { path: 'frontend/src/components/ui/utils.ts', desc: 'Merges Tailwind class strings (clsx + tailwind-merge).', names: ['cn'] },
+        { path: 'frontend/src/components/ui/button.tsx', desc: 'Styled button variants (Radix Slot optional).', names: ['Button', 'buttonVariants'] },
+        { path: 'frontend/src/components/ui/badge.tsx', desc: 'Small label component.', names: ['Badge', 'badgeVariants'] },
+        { path: 'frontend/src/components/ui/card.tsx', desc: 'Card layout primitives.', names: ['Card', 'CardHeader', 'CardTitle', 'CardDescription', 'CardContent', 'CardFooter'] },
+        { path: 'frontend/src/components/ui/input.tsx', desc: 'Text input styling.', names: ['Input'] },
+        { path: 'frontend/src/components/ui/label.tsx', desc: 'Accessible label.', names: ['Label'] },
+
+        { path: 'backend/manage.py', desc: 'Django CLI entry (runserver, migrate, etc.).', names: ['main'] },
+        { path: 'backend/mindbridge_api/settings.py', desc: 'INSTALLED_APPS, DB, CORS, REST_FRAMEWORK, SIMPLE_JWT, RASA_URL.', names: [] },
+        { path: 'backend/mindbridge_api/urls.py', desc: 'Mounts /admin, /api/* includes.', names: [] },
+        { path: 'backend/mindbridge_api/wsgi.py', desc: 'WSGI entry for production servers.', names: [] },
+        { path: 'backend/mindbridge_api/asgi.py', desc: 'ASGI entry for async servers.', names: [] },
+        { path: 'backend/mindbridge_api/__init__.py', desc: 'Python package marker.', names: [] },
+
+        { path: 'backend/accounts/models.py', desc: 'Profile (role, age, gender) + Counsellor extension; signals create Profile on User save.', names: ['Profile', 'Counsellor', 'create_profile', 'save_profile'] },
+        { path: 'backend/accounts/serializers.py', desc: 'RegisterSerializer, UserSerializer (adds role), CounsellorSerializer.', names: ['RegisterSerializer', 'UserSerializer', 'CounsellorSerializer'] },
+        { path: 'backend/accounts/views.py', desc: 'Register, current user profile, counsellor list.', names: ['RegisterView', 'MeView', 'CounsellorListView'] },
+        { path: 'backend/accounts/urls.py', desc: 'Maps auth endpoints to views + JWT views.', names: [] },
+        { path: 'backend/accounts/admin.py', desc: 'Registers Profile and Counsellor in Django admin.', names: [] },
+        { path: 'backend/accounts/apps.py', desc: 'AppConfig for accounts.', names: [] },
+        { path: 'backend/accounts/tests.py', desc: 'Placeholder / tests for accounts.', names: [] },
+        { path: 'backend/accounts/__init__.py', desc: 'Package marker.', names: [] },
+        { path: 'backend/accounts/migrations/0001_initial.py', desc: 'Initial accounts-related schema migration.', names: [] },
+        { path: 'backend/accounts/migrations/0002_counsellor.py', desc: 'Adds Counsellor model migration.', names: [] },
+        { path: 'backend/accounts/migrations/__init__.py', desc: 'Migrations package.', names: [] },
+
+        { path: 'backend/moods/models.py', desc: 'MoodEntry: user, mood_value 1–5, note, created_at.', names: ['MoodEntry'] },
+        { path: 'backend/moods/serializers.py', desc: 'MoodEntry JSON shape for API.', names: ['MoodEntrySerializer'] },
+        { path: 'backend/moods/views.py', desc: 'List/create moods for request.user only.', names: ['MoodEntryListCreateView', 'get_queryset', 'perform_create'] },
+        { path: 'backend/moods/urls.py', desc: 'Routes /api/moods/ to list/create view.', names: [] },
+        { path: 'backend/moods/admin.py', desc: 'Placeholder — MoodEntry not registered in admin yet.', names: [] },
+        { path: 'backend/moods/apps.py', desc: 'AppConfig.', names: [] },
+        { path: 'backend/moods/tests.py', desc: 'Tests placeholder.', names: [] },
+        { path: 'backend/moods/README.md', desc: 'Backend setup instructions.', names: [] },
+        { path: 'backend/moods/__init__.py', desc: 'Package marker.', names: [] },
+        { path: 'backend/moods/migrations/0001_initial.py', desc: 'Creates MoodEntry table.', names: [] },
+        { path: 'backend/moods/migrations/0002_moodentry_user.py', desc: 'Links MoodEntry to user.', names: [] },
+        { path: 'backend/moods/migrations/__init__.py', desc: 'Migrations package.', names: [] },
+
+        { path: 'backend/appointments/models.py', desc: 'Appointment between User (patient) and Counsellor.', names: ['Appointment'] },
+        { path: 'backend/appointments/serializers.py', desc: 'Validation prevents double-booking same counsellor hour.', names: ['AppointmentSerializer', 'AppointmentStatusSerializer', 'validate'] },
+        { path: 'backend/appointments/permissions.py', desc: 'Custom DRF permissions by profile.role.', names: ['IsPatient', 'IsCounsellor'] },
+        { path: 'backend/appointments/views.py', desc: 'Create/list/update appointments; compute hourly slots.', names: ['CreateAppointmentView', 'MyAppointmentsView', 'CounsellorAppointmentsView', 'UpdateAppointmentStatusView', 'AvailableSlotsView', 'get'] },
+        { path: 'backend/appointments/urls.py', desc: 'Appointment routes under /api/appointments/.', names: [] },
+        { path: 'backend/appointments/admin.py', desc: 'Admin registration.', names: [] },
+        { path: 'backend/appointments/apps.py', desc: 'AppConfig.', names: [] },
+        { path: 'backend/appointments/tests.py', desc: 'Tests placeholder.', names: [] },
+        { path: 'backend/appointments/__init__.py', desc: 'Package marker.', names: [] },
+        { path: 'backend/appointments/migrations/0001_initial.py', desc: 'Appointment schema.', names: [] },
+        { path: 'backend/appointments/migrations/__init__.py', desc: 'Migrations package.', names: [] },
+
+        { path: 'backend/chatbot/views.py', desc: 'POST message → forward to Rasa webhook; return text messages.', names: ['chatbot_message'] },
+        { path: 'backend/chatbot/urls.py', desc: 'Routes chatbot message endpoint.', names: [] },
+        { path: 'backend/chatbot/models.py', desc: 'Empty placeholder.', names: [] },
+        { path: 'backend/chatbot/admin.py', desc: 'Admin stub.', names: [] },
+        { path: 'backend/chatbot/apps.py', desc: 'AppConfig.', names: [] },
+        { path: 'backend/chatbot/tests.py', desc: 'Tests placeholder.', names: [] },
+        { path: 'backend/chatbot/__init__.py', desc: 'Package marker.', names: [] },
+        { path: 'backend/chatbot/migrations/__init__.py', desc: 'Migrations package.', names: [] },
+
+        { path: 'backend/resources/models.py', desc: 'Category + Resource (ManyToMany) for future CMS-style resources.', names: ['Category', 'Resource'] },
+        { path: 'backend/resources/views.py', desc: 'Empty — no REST views wired yet.', names: [] },
+        { path: 'backend/resources/admin.py', desc: 'Registers Resource and Category.', names: [] },
+        { path: 'backend/resources/apps.py', desc: 'AppConfig.', names: [] },
+        { path: 'backend/resources/tests.py', desc: 'Tests placeholder.', names: [] },
+        { path: 'backend/resources/__init__.py', desc: 'Package marker.', names: [] },
+        { path: 'backend/resources/migrations/0001_initial.py', desc: 'Resources schema.', names: [] },
+        { path: 'backend/resources/migrations/__init__.py', desc: 'Migrations package.', names: [] },
+
+        { path: 'backend/communication/models.py', desc: 'Room, Message, Report, Notification — future community chat.', names: ['Room', 'Message', 'Report', 'Notification'] },
+        { path: 'backend/communication/views.py', desc: 'Empty placeholder.', names: [] },
+        { path: 'backend/communication/admin.py', desc: 'Registers communication models.', names: [] },
+        { path: 'backend/communication/apps.py', desc: 'AppConfig.', names: [] },
+        { path: 'backend/communication/tests.py', desc: 'Tests placeholder.', names: [] },
+        { path: 'backend/communication/__init__.py', desc: 'Package marker.', names: [] },
+        { path: 'backend/communication/migrations/0001_initial.py', desc: 'Communication schema.', names: [] },
+        { path: 'backend/communication/migrations/__init__.py', desc: 'Migrations package.', names: [] },
+
+        { path: 'backend/rasa/config.yml', desc: 'Rasa pipeline and policies configuration.', names: [] },
+        { path: 'backend/rasa/domain.yml', desc: 'Intents, entities, responses, actions.', names: [] },
+        { path: 'backend/rasa/endpoints.yml', desc: 'Action server and other endpoints.', names: [] },
+        { path: 'backend/rasa/credentials.yml', desc: 'Channel credentials.', names: [] },
+        { path: 'backend/rasa/data/nlu.yml', desc: 'Training examples for natural language understanding.', names: [] },
+        { path: 'backend/rasa/data/stories.yml', desc: 'Conversation stories.', names: [] },
+        { path: 'backend/rasa/data/rules.yml', desc: 'Fixed rules mapping intents to actions.', names: [] },
+        { path: 'backend/rasa/actions/actions.py', desc: 'Custom Rasa actions (randomized help text, greet/goodbye/out_of_scope).', names: ['ActionWebsiteHelp', 'ActionAppointmentHelp', 'ActionReminderHelp', 'ActionChatCompletion', 'name', 'run'] },
+        { path: 'backend/rasa/actions/__init__.py', desc: 'Package marker.', names: [] },
+        { path: 'backend/rasa/tests/test_stories.yml', desc: 'Rasa test stories.', names: [] }
+      ];
+
+      var frag = document.createDocumentFragment();
+      files.forEach(function (f) {
+        var d = document.createElement('details');
+        d.className = 'file-ref searchable';
+        d.dataset.keywords = (f.path + ' ' + f.desc + ' ' + (f.names || []).join(' ')).toLowerCase();
+        var sum = document.createElement('summary');
+        sum.innerHTML = '<span class="path">' + f.path + '</span>';
+        var inner = document.createElement('div');
+        inner.className = 'inner';
+        inner.innerHTML = '<p>' + f.desc + '</p>';
+        if (f.names && f.names.length) {
+          var ul = document.createElement('ul');
+          f.names.forEach(function (n) {
+            var li = document.createElement('li');
+            li.textContent = n;
+            ul.appendChild(li);
+          });
+          inner.appendChild(ul);
+        }
+        d.appendChild(sum);
+        d.appendChild(inner);
+        frag.appendChild(d);
+      });
+      document.getElementById('fileRefs').appendChild(frag);
+
+      var q = document.getElementById('q');
+      q.addEventListener('input', function () {
+        var term = q.value.trim().toLowerCase();
+        var sections = document.querySelectorAll('.searchable');
+        sections.forEach(function (el) {
+          var text = (el.textContent || '').toLowerCase();
+          var kw = (el.dataset.keywords || '').toLowerCase();
+          var hit = !term || text.indexOf(term) !== -1 || kw.indexOf(term) !== -1;
+          el.classList.toggle('hidden-search', !hit);
+        });
+      });
+
+      document.getElementById('expandAll').addEventListener('click', function () {
+        document.querySelectorAll('details.file-ref').forEach(function (d) { d.open = true; });
+      });
+      document.getElementById('collapseAll').addEventListener('click', function () {
+        document.querySelectorAll('details.file-ref').forEach(function (d) { d.open = false; });
+      });
+    })();
+  </script>
+</body>
+</html>

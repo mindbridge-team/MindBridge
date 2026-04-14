@@ -3,6 +3,7 @@ import * as LabelPrimitive from "@radix-ui/react-label";
 
 import { cn } from "./utils";
 
+// Shared label style for clear, accessible form fields.
 function Label({
   className,
   ...props

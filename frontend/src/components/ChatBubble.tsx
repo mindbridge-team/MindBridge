@@ -2,20 +2,18 @@ import { MessageCircle, X } from 'lucide-react';
 
 import { Button } from './ui/button';
 import { cn } from './ui/utils';
+import { BRAND_TEXT, PRIMARY_BUTTON_COLORS } from '../lib/ui';
 
+// Floating support chat:
+// open/close the panel and show a ready mount point for chat integration.
 type ChatBubbleProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-/**
- * Floating chat launcher (bottom-right). The inner mount node is reserved for a
- * future embeddable chat plugin (iframe, web component, or SDK root).
- */
 export function ChatBubble({ open, onOpenChange }: ChatBubbleProps) {
   return (
     <>
-      {/* Backdrop — only when panel is open */}
       {open ? (
         <button
           type="button"
@@ -28,7 +26,6 @@ export function ChatBubble({ open, onOpenChange }: ChatBubbleProps) {
       <div
         className={cn(
           'fixed z-[50] flex flex-col items-end gap-3',
-          // Clear mobile bottom nav + safe area; desktop sits above content padding
           'right-4 max-[767px]:bottom-[calc(4.75rem+env(safe-area-inset-bottom))]',
           'md:bottom-6 md:right-6',
         )}
@@ -45,11 +42,11 @@ export function ChatBubble({ open, onOpenChange }: ChatBubbleProps) {
         >
           <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-gradient-to-r from-[#e8f4f7] to-white px-4 py-3">
             <div className="flex min-w-0 items-center gap-2">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#2d7a8f] text-white shadow-sm">
+              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${PRIMARY_BUTTON_COLORS} text-white shadow-sm`}>
                 <MessageCircle className="h-4 w-4" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-[#2d7a8f]">
+                <p className={`truncate text-sm font-semibold ${BRAND_TEXT}`}>
                   MindBridge Assistant
                 </p>
                 <p className="text-xs text-muted-foreground">We&apos;re here to help</p>
@@ -67,7 +64,6 @@ export function ChatBubble({ open, onOpenChange }: ChatBubbleProps) {
             </Button>
           </div>
 
-          {/* Mount point for a future chat widget / plugin */}
           <div
             id="chatbot-plugin-mount"
             className="flex min-h-[12rem] flex-1 flex-col items-center justify-center gap-2 bg-gradient-to-b from-white to-[#f8fafb] px-4 py-8 text-center"
@@ -91,7 +87,7 @@ export function ChatBubble({ open, onOpenChange }: ChatBubbleProps) {
           aria-expanded={open}
           aria-controls="chatbot-panel"
           className={cn(
-            'h-14 w-14 rounded-full border-0 bg-[#2d7a8f] text-white shadow-[0_8px_24px_rgba(45,122,143,0.35)] transition-transform hover:bg-[#236272]',
+            `h-14 w-14 rounded-full border-0 ${PRIMARY_BUTTON_COLORS} text-white shadow-[0_8px_24px_rgba(45,122,143,0.35)] transition-transform`,
             'hover:scale-[1.03] active:scale-[0.98]',
             open && 'ring-2 ring-[#2d7a8f]/30 ring-offset-2',
           )}

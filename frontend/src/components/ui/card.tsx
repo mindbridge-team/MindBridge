@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import { cn } from './utils';
 
+// Shared card wrappers used by dashboard and page sections.
 function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
