@@ -31,7 +31,20 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-insecure-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
 
 
-ALLOWED_HOSTS = []
+def _split_env_list(value: str) -> list[str]:
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+DEFAULT_ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    ".onrender.com",
+    ".vercel.app",
+]
+
+ALLOWED_HOSTS = _split_env_list(os.getenv("DJANGO_ALLOWED_HOSTS", ""))
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = DEFAULT_ALLOWED_HOSTS
 
 
 #Rasa URL
@@ -55,10 +68,27 @@ INSTALLED_APPS = [
     "chatbot"
 ]
 
-CORS_ALLOWED_ORIGINS = [
+DEFAULT_CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://frontend-abel-aberas-projects.vercel.app",
+    "https://frontend-phi-gules-14.vercel.app",
+    "https://frontend-abel-abera-abel-aberas-projects.vercel.app",
 ]
+
+CORS_ALLOWED_ORIGINS = _split_env_list(os.getenv("CORS_ALLOWED_ORIGINS", ""))
+if not CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS = DEFAULT_CORS_ALLOWED_ORIGINS
+
+CSRF_TRUSTED_ORIGINS = _split_env_list(os.getenv("CSRF_TRUSTED_ORIGINS", ""))
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        "https://*.onrender.com",
+        "https://*.vercel.app",
+    ]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
