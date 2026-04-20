@@ -40,6 +40,11 @@ Invoke-RestMethod -Uri "http://localhost:5005/webhooks/rest/webhook" `
   -ContentType "application/json" `
   -Body '{"sender":"test_user","message":"what's the weather like"}'
 
+Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/chatbot/message/" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"message":"can you help me use the website","sender":"abhi"}' 
+
 ## Tech Stack
 
 - React + TypeScript + Vite
