@@ -1,3 +1,4 @@
+// Shared mood display values used by dashboard and tracker components.
 export const MOOD_LABELS: Record<number, string> = {
   1: 'Very low',
   2: 'Low',

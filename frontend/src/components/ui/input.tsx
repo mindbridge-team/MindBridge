@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { cn } from "./utils";
 
+// Shared input style used in forms across the app.
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <input

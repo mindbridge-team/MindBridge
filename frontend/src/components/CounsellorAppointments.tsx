@@ -1,54 +1,70 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Clock, RefreshCcw } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { RefreshCcw } from 'lucide-react';
 
-import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
+import { ErrorMessage, LoadingMessage } from './ui/feedback';
+import {
+  AppointmentPastCard,
+  AppointmentUpcomingCard,
+} from './appointments/AppointmentSections';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getCounsellorAppointments,
   updateAppointmentStatus,
   type Appointment,
   type AppointmentStatus,
+  type AuthOptions,
 } from '../lib/api';
+import { splitAppointmentsByTime } from '../lib/appointments';
+import { createApiAuth } from '../lib/auth';
 
-function parseApiDate(value: string): Date | null {
-  const raw = value?.trim?.() ?? '';
-  if (!raw) return null;
-  const hasTz = /([zZ]|[+-]\d{2}:\d{2})$/.test(raw);
-  const d = new Date(hasTz ? raw : `${raw}Z`);
-  return Number.isFinite(d.getTime()) ? d : null;
+// Demo page for counsellors:
+// review assigned sessions and update each session status.
+const STATUS_SELECT_CLASSES = 'h-9 rounded-md border border-input bg-input-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50';
+
+const APPOINTMENT_STATUS_OPTIONS: AppointmentStatus[] = ['pending', 'accepted', 'completed', 'cancelled'];
+
+function updateAppointmentInList(
+  appointments: Appointment[],
+  updatedAppointment: Appointment
+): Appointment[] {
+  return appointments.map((appointment) =>
+    appointment.id === updatedAppointment.id ? updatedAppointment : appointment
+  );
 }
 
-function formatUtcDateTime(value: string): string {
-  const d = parseApiDate(value);
-  if (!d) return value;
-  return d.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: 'UTC',
-  });
-}
+type AppointmentStatusSelectProps = {
+  value: AppointmentStatus;
+  disabled?: boolean;
+  labelled?: boolean;
+  onChange: (next: AppointmentStatus) => void;
+};
 
-function statusClass(status: Appointment['status']): string {
-  switch (status) {
-    case 'accepted':
-      return 'bg-emerald-100 text-emerald-800 border-transparent';
-    case 'completed':
-      return 'bg-slate-200 text-slate-800 border-transparent';
-    case 'cancelled':
-      return 'bg-red-100 text-red-700 border-transparent';
-    case 'pending':
-    default:
-      return 'bg-amber-100 text-amber-800 border-transparent';
-  }
+function AppointmentStatusSelect({
+  value,
+  disabled = false,
+  labelled = false,
+  onChange,
+}: AppointmentStatusSelectProps) {
+  return (
+    <div className="flex items-center gap-2">
+      {labelled ? <label className="text-xs text-muted-foreground">Status</label> : null}
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as AppointmentStatus)}
+        disabled={disabled}
+        className={STATUS_SELECT_CLASSES}
+      >
+        {APPOINTMENT_STATUS_OPTIONS.map((statusOption) => (
+          <option key={statusOption} value={statusOption}>
+            {statusOption}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
 }
-
-const statusOptions: AppointmentStatus[] = ['pending', 'accepted', 'completed', 'cancelled'];
 
 export function CounsellorAppointments() {
   const { accessToken, refreshToken, persistAccessToken } = useAuth();
@@ -60,16 +76,17 @@ export function CounsellorAppointments() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [updateError, setUpdateError] = useState('');
 
-  const load = useCallback(async () => {
-    if (!accessToken) return;
+  const loadAppointments = useCallback(async () => {
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      const apps = await getCounsellorAppointments(accessToken, {
-        refreshToken,
-        onAccessToken: persistAccessToken,
-      });
-      setAppointments(apps);
+      const auth = createApiAuth(refreshToken, persistAccessToken);
+      const counsellorAppointments = await getCounsellorAppointments(accessToken, auth);
+      setAppointments(counsellorAppointments);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load appointments');
     } finally {
@@ -78,39 +95,20 @@ export function CounsellorAppointments() {
   }, [accessToken, refreshToken, persistAccessToken]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void loadAppointments();
+  }, [loadAppointments]);
 
-  const sorted = useMemo(() => {
-    return [...appointments].sort((a, b) => {
-      const at = parseApiDate(a.scheduled_time)?.getTime() ?? -Infinity;
-      const bt = parseApiDate(b.scheduled_time)?.getTime() ?? -Infinity;
-      return bt - at;
-    });
-  }, [appointments]);
+  const { upcoming, past } = splitAppointmentsByTime(appointments);
 
-  const now = Date.now();
-  const upcoming = sorted.filter((a) => {
-    const t = parseApiDate(a.scheduled_time)?.getTime();
-    return t == null ? true : t >= now;
-  });
-  const past = sorted.filter((a) => {
-    const t = parseApiDate(a.scheduled_time)?.getTime();
-    return t == null ? false : t < now;
-  });
+  const buildAuth = (): AuthOptions => createApiAuth(refreshToken, persistAccessToken);
 
   const handleStatusChange = async (appointmentId: number, next: AppointmentStatus) => {
     if (!accessToken) return;
     setUpdatingId(appointmentId);
     setUpdateError('');
     try {
-      const updated = await updateAppointmentStatus(
-        accessToken,
-        appointmentId,
-        next,
-        { refreshToken, onAccessToken: persistAccessToken }
-      );
-      setAppointments((prev) => prev.map((a) => (a.id === appointmentId ? updated : a)));
+      const updated = await updateAppointmentStatus(accessToken, appointmentId, next, buildAuth());
+      setAppointments((prev) => updateAppointmentInList(prev, updated));
     } catch (err) {
       setUpdateError(err instanceof Error ? err.message : 'Failed to update status');
     } finally {
@@ -122,36 +120,28 @@ export function CounsellorAppointments() {
     <div className="max-w-5xl mx-auto">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl mb-1 text-foreground">Counsellor Appointments</h2>
+          <h2 className="text-2xl mb-1 text-foreground">Assigned Sessions</h2>
           <p className="text-sm text-muted-foreground">
-            Review sessions assigned to you and update their status.
+            Check your assigned sessions and keep their status up to date.
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={load} disabled={loading}>
+          <Button variant="outline" onClick={loadAppointments} disabled={loading}>
             <RefreshCcw className="h-4 w-4" />
             Refresh
           </Button>
         </div>
       </div>
 
-      {error && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4">
-          {error}
-        </p>
-      )}
-      {updateError && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4">
-          {updateError}
-        </p>
-      )}
+      {error && <ErrorMessage className="mb-4">{error}</ErrorMessage>}
+      {updateError && <ErrorMessage className="mb-4">{updateError}</ErrorMessage>}
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading appointments…</p>
+        <LoadingMessage>Loading appointments…</LoadingMessage>
       ) : (
         <div className="space-y-6">
           <section className="space-y-3">
-            <h3 className="text-sm font-medium text-foreground">Upcoming</h3>
+            <h3 className="text-sm font-medium text-foreground">Coming up</h3>
             {upcoming.length === 0 ? (
               <Card className="shadow-sm">
                 <CardContent className="px-4 py-6 text-sm text-muted-foreground text-center">
@@ -160,42 +150,22 @@ export function CounsellorAppointments() {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {upcoming.map((a) => {
-                  const isUpdating = updatingId === a.id;
+                {upcoming.map((appointment) => {
+                  const isUpdating = updatingId === appointment.id;
                   return (
-                    <Card key={a.id} className="gap-0 shadow-sm">
-                      <CardHeader className="px-4 pt-4 pb-2">
-                        <CardTitle className="text-sm flex items-center justify-between gap-2">
-                          <span className="truncate">{a.patient}</span>
-                          <Badge className={`${statusClass(a.status)} text-xs py-0.5`}>
-                            {a.status}
-                          </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="px-4 pb-4 space-y-2">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>{formatUtcDateTime(a.scheduled_time)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <label className="text-xs text-muted-foreground">Status</label>
-                          <select
-                            value={a.status}
-                            onChange={(e) =>
-                              handleStatusChange(a.id, e.target.value as AppointmentStatus)
-                            }
-                            disabled={isUpdating}
-                            className="h-9 rounded-md border border-input bg-input-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-                          >
-                            {statusOptions.map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <AppointmentUpcomingCard
+                      key={appointment.id}
+                      appointment={appointment}
+                      title={appointment.patient}
+                      controls={(
+                        <AppointmentStatusSelect
+                          value={appointment.status}
+                          disabled={isUpdating}
+                          labelled
+                          onChange={(next) => handleStatusChange(appointment.id, next)}
+                        />
+                      )}
+                    />
                   );
                 })}
               </div>
@@ -203,41 +173,26 @@ export function CounsellorAppointments() {
           </section>
 
           <section className="space-y-3">
-            <h3 className="text-sm font-medium text-foreground">Past</h3>
+            <h3 className="text-sm font-medium text-foreground">Past sessions</h3>
             {past.length === 0 ? (
               <p className="text-sm text-muted-foreground">No past appointments.</p>
             ) : (
               <div className="space-y-2">
-                {past.map((a) => {
-                  const isUpdating = updatingId === a.id;
+                {past.map((appointment) => {
+                  const isUpdating = updatingId === appointment.id;
                   return (
-                    <Card key={a.id} className="gap-0 shadow-sm">
-                      <CardContent className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{a.patient}</p>
-                          <p className="text-xs text-muted-foreground">{formatUtcDateTime(a.scheduled_time)}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className={`${statusClass(a.status)} text-xs py-0.5`}>
-                            {a.status}
-                          </Badge>
-                          <select
-                            value={a.status}
-                            onChange={(e) =>
-                              handleStatusChange(a.id, e.target.value as AppointmentStatus)
-                            }
-                            disabled={isUpdating}
-                            className="h-9 rounded-md border border-input bg-input-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-                          >
-                            {statusOptions.map((s) => (
-                              <option key={s} value={s}>
-                                {s}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <AppointmentPastCard
+                      key={appointment.id}
+                      appointment={appointment}
+                      title={appointment.patient}
+                      controls={(
+                        <AppointmentStatusSelect
+                          value={appointment.status}
+                          disabled={isUpdating}
+                          onChange={(next) => handleStatusChange(appointment.id, next)}
+                        />
+                      )}
+                    />
                   );
                 })}
               </div>

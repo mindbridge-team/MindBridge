@@ -1,76 +1,87 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { getMe, login as apiLogin, type Me } from '../lib/api';
+import { loadCurrentProfile } from './authProfile';
+import {
+  clearAuthTokens,
+  readStoredTokens,
+  storeAccessToken,
+  storeAuthTokens,
+} from './authStorage';
 
-const TOKEN_KEY = 'mindbridge_access_token';
-const REFRESH_KEY = 'mindbridge_refresh_token';
-
+// Shared auth state for demo:
+// stores tokens, current user, and login/logout behavior.
 type AuthContextType = {
   isLoggedIn: boolean;
   accessToken: string | null;
   refreshToken: string | null;
   me: Me | null;
   persistAccessToken: (token: string) => void;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [accessToken, setAccessToken] = useState<string | null>(() =>
-    localStorage.getItem(TOKEN_KEY)
-  );
-  const [refreshToken, setRefreshToken] = useState<string | null>(() =>
-    localStorage.getItem(REFRESH_KEY)
-  );
+  const [accessToken, setAccessToken] = useState<string | null>(() => readStoredTokens().accessToken);
+  const [refreshToken, setRefreshToken] = useState<string | null>(() => readStoredTokens().refreshToken);
+  const [storageType, setStorageType] = useState<'session' | 'local'>(() => readStoredTokens().storageType ?? 'session');
   const [me, setMe] = useState<Me | null>(null);
 
-  const persistAccessToken = useCallback((token: string) => {
-    localStorage.setItem(TOKEN_KEY, token);
+  function persistAccessToken(token: string) {
+    storeAccessToken(token, storageType);
     setAccessToken(token);
-  }, []);
+  }
 
-  const login = useCallback(async (username: string, password: string) => {
+  async function login(username: string, password: string, rememberMe: boolean) {
     const { access, refresh } = await apiLogin(username, password);
-    localStorage.setItem(TOKEN_KEY, access);
-    localStorage.setItem(REFRESH_KEY, refresh);
+    const nextStorageType = rememberMe ? 'local' : 'session';
+    storeAuthTokens(access, refresh, nextStorageType);
+    setStorageType(nextStorageType);
     setAccessToken(access);
     setRefreshToken(refresh);
     const profile = await getMe(access, { refreshToken: refresh });
     setMe(profile);
-  }, []);
+  }
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_KEY);
+  function logout() {
+    clearAuthTokens();
     setAccessToken(null);
     setRefreshToken(null);
     setMe(null);
-  }, []);
+  }
 
   useEffect(() => {
     let cancelled = false;
-    async function run() {
+    async function loadCurrentUser() {
       if (!accessToken) {
         if (!cancelled) setMe(null);
         return;
       }
-      try {
-        const profile = await getMe(accessToken, {
-          refreshToken,
-          onAccessToken: persistAccessToken,
-        });
-        if (!cancelled) setMe(profile);
-      } catch {
-        if (!cancelled) setMe(null);
+      const profile = await loadCurrentProfile({
+        accessToken,
+        refreshToken,
+        persistAccessToken,
+      });
+      if (cancelled) return;
+
+      if (!profile) {
+        // If profile loading fails (expired/invalid token), reset auth and show login screen.
+        clearAuthTokens();
+        setAccessToken(null);
+        setRefreshToken(null);
+        setMe(null);
+        return;
       }
+
+      setMe(profile);
     }
-    void run();
+    void loadCurrentUser();
     return () => {
       cancelled = true;
     };
-  }, [accessToken, refreshToken, persistAccessToken]);
+  }, [accessToken, refreshToken]);
 
   return (
     <AuthContext.Provider
@@ -89,8 +100,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  const authContextValue = useContext(AuthContext);
+  if (!authContextValue) throw new Error('useAuth must be used within AuthProvider');
+  return authContextValue;
 }

@@ -3,6 +3,8 @@ import { ImageIcon } from 'lucide-react';
 
 import { cn } from './ui/utils';
 
+// Safe image helper:
+// shows the image when available, otherwise shows a simple placeholder icon.
 type ImageWithFallbackProps = {
   src: string;
   alt: string;
