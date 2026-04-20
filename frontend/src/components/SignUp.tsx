@@ -91,7 +91,7 @@ export function SignUp() {
     setErrors({});
     try {
       await register(formData.username, formData.email, formData.password);
-      await login(formData.username, formData.password);
+      await login(formData.username, formData.password, true);
     } catch (err) {
       setErrors({
         submit: err instanceof Error ? err.message : 'Registration failed',

@@ -261,3 +261,140 @@ export async function createAppointment(
     errorKeys: ['non_field_errors', 'detail', 'scheduled_time', 'counsellor'],
   });
 }
+
+export type Room = {
+  id: number;
+  name: string;
+  description: string;
+  created_by: string;
+  participants: number[];
+  created_at: string;
+  is_active: boolean;
+};
+
+export type ChatMessage = {
+  id: number;
+  room: number;
+  user: string;
+  message_text: string;
+  created_at: string;
+};
+
+export type Notification = {
+  id: number;
+  user: number;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+};
+
+export async function getRooms(
+  accessToken: string,
+  auth?: AuthOptions
+): Promise<Room[]> {
+  return requestJson<Room[]>('/api/communication/rooms/', accessToken, {
+    auth,
+    errorMessage: 'Failed to load rooms',
+  });
+}
+
+export async function createRoom(
+  accessToken: string,
+  name: string,
+  description: string,
+  auth?: AuthOptions
+): Promise<Room> {
+  return requestJson<Room>('/api/communication/rooms/create/', accessToken, {
+    method: 'POST',
+    body: { name, description },
+    auth,
+    errorMessage: 'Failed to create room',
+    errorKeys: ['detail', 'name', 'description'],
+  });
+}
+
+export async function joinRoom(
+  accessToken: string,
+  roomId: number,
+  auth?: AuthOptions
+): Promise<{ message: string }> {
+  return requestJson<{ message: string }>(`/api/communication/rooms/${roomId}/join/`, accessToken, {
+    method: 'POST',
+    auth,
+    errorMessage: 'Failed to join room',
+  });
+}
+
+export async function leaveRoom(
+  accessToken: string,
+  roomId: number,
+  auth?: AuthOptions
+): Promise<{ message: string }> {
+  return requestJson<{ message: string }>(`/api/communication/rooms/${roomId}/leave/`, accessToken, {
+    method: 'POST',
+    auth,
+    errorMessage: 'Failed to leave room',
+  });
+}
+
+export async function getRoomMessages(
+  accessToken: string,
+  roomId: number,
+  auth?: AuthOptions
+): Promise<ChatMessage[]> {
+  return requestJson<ChatMessage[]>(`/api/communication/rooms/${roomId}/messages/`, accessToken, {
+    auth,
+    errorMessage: 'Failed to load room messages',
+  });
+}
+
+export async function sendRoomMessage(
+  accessToken: string,
+  room: number,
+  message_text: string,
+  auth?: AuthOptions
+): Promise<ChatMessage> {
+  return requestJson<ChatMessage>('/api/communication/messages/send/', accessToken, {
+    method: 'POST',
+    body: { room, message_text },
+    auth,
+    errorMessage: 'Failed to send message',
+    errorKeys: ['detail', 'room', 'message_text'],
+  });
+}
+
+export async function getNotifications(
+  accessToken: string,
+  auth?: AuthOptions
+): Promise<Notification[]> {
+  return requestJson<Notification[]>('/api/communication/notifications/', accessToken, {
+    auth,
+    errorMessage: 'Failed to load notifications',
+  });
+}
+
+type ChatbotReply = {
+  success: boolean;
+  sender: string;
+  messages: string[];
+};
+
+export async function sendChatbotMessage(message: string, sender?: string): Promise<ChatbotReply> {
+  const response = await fetch(`${API_BASE}/api/chatbot/message/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, sender }),
+  });
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => ({}));
+    const errorMessage = pickErrorText(errorPayload, ['error', 'detail']) || 'Failed to contact chatbot';
+    throw new Error(errorMessage);
+  }
+  const payload = await response.json();
+  return {
+    success: Boolean(payload.success),
+    sender: String(payload.sender ?? 'anonymous_user'),
+    messages: Array.isArray(payload.messages) ? payload.messages.map(String) : [],
+  };
+}
