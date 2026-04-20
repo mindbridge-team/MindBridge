@@ -5,6 +5,8 @@ import { MoodDashboard } from './components/MoodDashboard';
 import { MoodTracker } from './components/MoodTracker';
 import { MainLayout } from './components/MainLayout';
 import { Resources } from './components/Resources';
+import { Community } from './components/Community';
+import { Profile } from './components/Profile';
 import { BookSession } from './components/BookSession';
 import { MyAppointments } from './components/MyAppointments';
 import { CounsellorAppointments } from './components/CounsellorAppointments';
@@ -50,6 +52,8 @@ function App() {
           element={<HomeRoute isCounsellorOrAdmin={isCounsellorOrAdmin} patientHome={<MoodDashboard />} />}
         />
         <Route path="/resources" element={<Resources />} />
+        <Route path="/community" element={<Community />} />
+        <Route path="/profile" element={<Profile />} />
         <Route
           path="/mood"
           element={<GuardedRoute allowed={isPatient} element={<MoodTracker />} />}

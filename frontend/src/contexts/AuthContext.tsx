@@ -17,7 +17,7 @@ type AuthContextType = {
   refreshToken: string | null;
   me: Me | null;
   persistAccessToken: (token: string) => void;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => void;
 };
 
@@ -26,16 +26,19 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(() => readStoredTokens().accessToken);
   const [refreshToken, setRefreshToken] = useState<string | null>(() => readStoredTokens().refreshToken);
+  const [storageType, setStorageType] = useState<'session' | 'local'>(() => readStoredTokens().storageType ?? 'session');
   const [me, setMe] = useState<Me | null>(null);
 
   function persistAccessToken(token: string) {
-    storeAccessToken(token);
+    storeAccessToken(token, storageType);
     setAccessToken(token);
   }
 
-  async function login(username: string, password: string) {
+  async function login(username: string, password: string, rememberMe: boolean) {
     const { access, refresh } = await apiLogin(username, password);
-    storeAuthTokens(access, refresh);
+    const nextStorageType = rememberMe ? 'local' : 'session';
+    storeAuthTokens(access, refresh, nextStorageType);
+    setStorageType(nextStorageType);
     setAccessToken(access);
     setRefreshToken(refresh);
     const profile = await getMe(access, { refreshToken: refresh });
@@ -61,7 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshToken,
         persistAccessToken,
       });
-      if (!cancelled) setMe(profile);
+      if (cancelled) return;
+
+      if (!profile) {
+        // If profile loading fails (expired/invalid token), reset auth and show login screen.
+        clearAuthTokens();
+        setAccessToken(null);
+        setRefreshToken(null);
+        setMe(null);
+        return;
+      }
+
+      setMe(profile);
     }
     void loadCurrentUser();
     return () => {

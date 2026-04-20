@@ -12,7 +12,7 @@ const INPUT_CLASSES = 'bg-[#f8fafb] border-border h-9 md:h-11 text-sm md:text-ba
 const PRIMARY_BUTTON_CLASSES = `w-full ${PRIMARY_BUTTON_COLORS} h-9 md:h-11 text-sm md:text-base`;
 
 interface LoginProps {
-  onLogin: (username: string, password: string) => Promise<void>;
+  onLogin: (username: string, password: string, rememberMe: boolean) => Promise<void>;
 }
 
 type LoginFormEvent = React.FormEvent<HTMLFormElement>;
@@ -20,6 +20,7 @@ type LoginFormEvent = React.FormEvent<HTMLFormElement>;
 export function Login({ onLogin }: LoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,7 +29,7 @@ export function Login({ onLogin }: LoginProps) {
     setIsLoading(true);
     setError('');
     try {
-      await onLogin(username, password);
+      await onLogin(username, password, rememberMe);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -81,7 +82,12 @@ export function Login({ onLogin }: LoginProps) {
 
             <div className="flex items-center justify-between text-xs md:text-sm">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="rounded border-border w-4 h-4 md:w-[18px] md:h-[18px]" />
+                <input
+                  type="checkbox"
+                  className="rounded border-border w-4 h-4 md:w-[18px] md:h-[18px]"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
                 <span className="text-muted-foreground">Remember me</span>
               </label>
               <a href="#" className="text-[#2d7a8f] hover:underline">

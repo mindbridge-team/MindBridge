@@ -3,6 +3,8 @@ import {
   Heart,
   Calendar,
   BookOpen,
+  Users,
+  User,
 } from 'lucide-react';
 import { type NavItem } from './AppNavigation';
 
@@ -28,24 +30,31 @@ export function buildNavItems(role: AppRole): NavItem[] {
       to: '/',
     },
     {
+      id: 'community',
+      sidebarLabel: 'Community',
+      mobileLabel: 'Community',
+      icon: Users,
+      to: '/community',
+    },
+    {
       id: 'resources',
       sidebarLabel: 'Resources',
       mobileLabel: 'Resources',
       icon: BookOpen,
       to: '/resources',
     },
+    {
+      id: 'profile',
+      sidebarLabel: 'Profile',
+      mobileLabel: 'Profile',
+      icon: User,
+      to: '/profile',
+    },
   ];
 
   if (role === 'patient') {
     return [
-      ...commonItems,
-      {
-        id: 'mood',
-        sidebarLabel: 'Mood Tracker',
-        mobileLabel: 'Mood',
-        icon: Heart,
-        to: '/mood',
-      },
+      commonItems[0],
       {
         id: 'session',
         sidebarLabel: 'Book Session',
@@ -53,6 +62,14 @@ export function buildNavItems(role: AppRole): NavItem[] {
         icon: Calendar,
         to: '/appointments/book',
       },
+      {
+        id: 'mood',
+        sidebarLabel: 'Mood Tracker',
+        mobileLabel: 'Mood',
+        icon: Heart,
+        to: '/mood',
+      },
+      ...commonItems.slice(1),
     ];
   }
 
