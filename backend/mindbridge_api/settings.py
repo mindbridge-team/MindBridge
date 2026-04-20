@@ -76,19 +76,6 @@ DEFAULT_CORS_ALLOWED_ORIGINS = [
     "https://frontend-abel-abera-abel-aberas-projects.vercel.app",
 ]
 
-# Exact origins above are kept for clarity; previews and renames use new hostnames.
-# Browsers require a matching Allow-Origin for each deployment URL (django-cors-headers
-# does not support wildcards in CORS_ALLOWED_ORIGINS), so also allow any Vercel host.
-DEFAULT_CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://[a-zA-Z0-9.-]+\.vercel\.app$",
-    r"^http://localhost:[0-9]+$",
-    r"^http://127\.0\.0\.1:[0-9]+$",
-]
-
-CORS_ALLOWED_ORIGIN_REGEXES = _split_env_list(os.getenv("CORS_ALLOWED_ORIGIN_REGEXES", ""))
-if not CORS_ALLOWED_ORIGIN_REGEXES:
-    CORS_ALLOWED_ORIGIN_REGEXES = DEFAULT_CORS_ALLOWED_ORIGIN_REGEXES
-
 CORS_ALLOWED_ORIGINS = _split_env_list(os.getenv("CORS_ALLOWED_ORIGINS", ""))
 if not CORS_ALLOWED_ORIGINS:
     CORS_ALLOWED_ORIGINS = DEFAULT_CORS_ALLOWED_ORIGINS
