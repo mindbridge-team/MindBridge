@@ -1,4 +1,24 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const PRODUCTION_API_DEFAULT = 'https://mindbridge-cpva.onrender.com';
+const DEVELOPMENT_API_DEFAULT = 'http://127.0.0.1:8000';
+
+function resolveApiBase(): string {
+  const raw =
+    (import.meta.env.VITE_API_URL as string | undefined)?.trim().replace(/\/$/, '') ?? '';
+  if (!raw) {
+    return import.meta.env.DEV ? DEVELOPMENT_API_DEFAULT : PRODUCTION_API_DEFAULT;
+  }
+  try {
+    const { hostname } = new URL(raw);
+    if (hostname.endsWith('.vercel.app')) {
+      return import.meta.env.DEV ? DEVELOPMENT_API_DEFAULT : PRODUCTION_API_DEFAULT;
+    }
+  } catch {
+    return import.meta.env.DEV ? DEVELOPMENT_API_DEFAULT : PRODUCTION_API_DEFAULT;
+  }
+  return raw;
+}
+
+const API_BASE = resolveApiBase();
 
 // API helper layer for demo:
 // keeps backend calls in one place with consistent auth and error handling.
