@@ -23,6 +23,10 @@ export function Profile() {
             {me?.username ?? 'Not available'}
           </p>
           <p>
+            <span className="font-medium">Email:</span>{' '}
+            {me?.email ?? 'Not available'}
+          </p>
+          <p>
             <span className="font-medium">Role:</span>{' '}
             {me?.role ?? 'Not available'}
           </p>

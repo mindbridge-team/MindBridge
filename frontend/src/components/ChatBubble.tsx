@@ -1,8 +1,11 @@
-import { MessageCircle, X } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
+import { MessageCircle, Send, X } from 'lucide-react';
 
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { cn } from './ui/utils';
 import { BRAND_TEXT, PRIMARY_BUTTON_COLORS } from '../lib/ui';
+import { sendChatbotMessage } from '../lib/api';
 
 // Floating support chat:
 // open/close the panel and show a ready mount point for chat integration.
@@ -12,6 +15,30 @@ type ChatBubbleProps = {
 };
 
 export function ChatBubble({ open, onOpenChange }: ChatBubbleProps) {
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'bot'; text: string }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSend(e: FormEvent) {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text || loading) return;
+    setLoading(true);
+    setError('');
+    setMessages((prev) => [...prev, { role: 'user', text }]);
+    setInput('');
+    try {
+      const reply = await sendChatbotMessage(text);
+      const botMessages = reply.messages.length > 0 ? reply.messages : ['Thanks for your message.'];
+      setMessages((prev) => [...prev, ...botMessages.map((m) => ({ role: 'bot' as const, text: m }))]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <>
       {open ? (
@@ -64,19 +91,42 @@ export function ChatBubble({ open, onOpenChange }: ChatBubbleProps) {
             </Button>
           </div>
 
-          <div
-            id="chatbot-plugin-mount"
-            className="flex min-h-[12rem] flex-1 flex-col items-center justify-center gap-2 bg-gradient-to-b from-white to-[#f8fafb] px-4 py-8 text-center"
-          >
-            <p className="text-sm text-muted-foreground">
-              Chat support will appear here.
-            </p>
-            <p className="text-xs text-muted-foreground/80">
-              Your team can mount a plugin or embed in{' '}
-              <code className="rounded bg-muted px-1 py-0.5 text-[0.7rem]">
-                #chatbot-plugin-mount
-              </code>
-            </p>
+          <div className="flex min-h-[12rem] flex-1 flex-col bg-gradient-to-b from-white to-[#f8fafb]">
+            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+              {messages.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">
+                  Start a conversation with the assistant.
+                </p>
+              ) : (
+                messages.map((message, index) => (
+                  <div
+                    key={`${message.role}-${index}`}
+                    className={cn(
+                      'max-w-[85%] rounded-lg px-3 py-2 text-sm',
+                      message.role === 'user'
+                        ? 'ml-auto bg-[#2d7a8f] text-white'
+                        : 'mr-auto bg-muted text-foreground'
+                    )}
+                  >
+                    {message.text}
+                  </div>
+                ))
+              )}
+            </div>
+            <form onSubmit={handleSend} className="border-t border-border/60 p-3 space-y-2">
+              {error ? <p className="text-xs text-red-600">{error}</p> : null}
+              <div className="flex gap-2">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type your message"
+                  disabled={loading}
+                />
+                <Button type="submit" size="icon" disabled={loading || !input.trim()}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
 
