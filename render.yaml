@@ -1,0 +1,54 @@
+databases:
+  - name: mindbridge-db
+    plan: free
+
+services:
+  - type: web
+    name: mindbridge-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python manage.py migrate && gunicorn mindbridge_api.wsgi:application
+    envVars:
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CORS_ALLOWED_ORIGIN_REGEXES
+        value: ^https://[a-zA-Z0-9.-]+\.onrender\.com$,^https://[a-zA-Z0-9.-]+\.vercel\.app$
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://*.onrender.com,https://*.vercel.app
+      - key: DB_HOST
+        fromDatabase:
+          name: mindbridge-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: mindbridge-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: mindbridge-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: mindbridge-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: mindbridge-db
+          property: password
+
+  - type: web
+    name: mindbridge-frontend
+    runtime: static
+    rootDir: frontend
+    plan: free
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://mindbridge-backend.onrender.com
