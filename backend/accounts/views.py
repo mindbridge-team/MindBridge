@@ -22,6 +22,8 @@ class MeView(APIView):
 
 
 class CounsellorListView(generics.ListAPIView):
-    queryset = Counsellor.objects.filter(is_verified=True)
+    """List counsellor profiles for booking. Verified entries sort first; include unverified so
+    new counsellors appear after admin creates the row (is_verified defaults to false)."""
+    queryset = Counsellor.objects.order_by("-is_verified", "id")
     serializer_class = CounsellorSerializer
     permission_classes = [permissions.IsAuthenticated]
