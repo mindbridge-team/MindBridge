@@ -1,4 +1,26 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const PRODUCTION_API_DEFAULT = 'https://mindbridge-cpva.onrender.com';
+const DEVELOPMENT_API_DEFAULT = 'http://127.0.0.1:8000';
+
+/** Vite only inlines `VITE_*` env vars present at `vite build` time (set them in Vercel project env). */
+function resolveApiBase(): string {
+  const raw =
+    (import.meta.env.VITE_API_URL as string | undefined)?.trim().replace(/\/$/, '') ?? '';
+  if (!raw) {
+    return import.meta.env.DEV ? DEVELOPMENT_API_DEFAULT : PRODUCTION_API_DEFAULT;
+  }
+  try {
+    const { hostname } = new URL(raw);
+    // Avoid treating the Vercel frontend URL as the API if misconfigured in the dashboard.
+    if (hostname.endsWith('.vercel.app')) {
+      return import.meta.env.DEV ? DEVELOPMENT_API_DEFAULT : PRODUCTION_API_DEFAULT;
+    }
+  } catch {
+    return import.meta.env.DEV ? DEVELOPMENT_API_DEFAULT : PRODUCTION_API_DEFAULT;
+  }
+  return raw;
+}
+
+const API_BASE = resolveApiBase();
 
 // API helper layer for demo:
 // keeps backend calls in one place with consistent auth and error handling.
