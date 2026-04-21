@@ -19,7 +19,14 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    role = serializers.CharField(source="profile.role")
+    role = serializers.SerializerMethodField()
+
+    def get_role(self, obj):
+        profile = getattr(obj, "profile", None)
+        if profile and getattr(profile, "role", None):
+            return profile.role
+        # Keep API stable even if legacy users are missing profile rows.
+        return "patient"
 
     class Meta:
         model = User
