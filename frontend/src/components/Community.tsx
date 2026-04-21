@@ -81,6 +81,8 @@ export function Community() {
         return;
       }
       try {
+        // Backend only allows messages for room participants; joining is idempotent.
+        await joinRoom(accessToken, selectedRoomId, auth);
         const roomMessages = await getRoomMessages(accessToken, selectedRoomId, auth);
         if (!cancelled) {
           setMessages(roomMessages);
@@ -100,6 +102,7 @@ export function Community() {
     if (!accessToken || !selectedRoomId) return;
     const intervalId = window.setInterval(async () => {
       try {
+        await joinRoom(accessToken, selectedRoomId, auth);
         const roomMessages = await getRoomMessages(accessToken, selectedRoomId, auth);
         setMessages(roomMessages);
         setLastMessagesUpdatedAt(new Date());
@@ -158,6 +161,7 @@ export function Community() {
     if (!accessToken || !selectedRoomId || !messageText.trim()) return;
     setError('');
     try {
+      await joinRoom(accessToken, selectedRoomId, auth);
       const sent = await sendRoomMessage(accessToken, selectedRoomId, messageText.trim(), auth);
       setMessages((prev) => [...prev, sent]);
       setMessageText('');
