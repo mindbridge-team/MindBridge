@@ -46,7 +46,6 @@ services:
     name: mindbridge-frontend
     runtime: static
     rootDir: frontend
-    plan: starter
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     envVars:
