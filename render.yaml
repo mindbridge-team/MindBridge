@@ -41,6 +41,8 @@ services:
         fromDatabase:
           name: mindbridge-db
           property: password
+      - key: RASA_URL
+        value: https://mindbridge-rasa.onrender.com
 
   - type: web
     name: mindbridge-frontend
@@ -51,3 +53,19 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://mindbridge-backend.onrender.com
+
+  - type: web
+    name: mindbridge-rasa
+    runtime: python
+    rootDir: backend/rasa
+    plan: free
+    buildCommand: pip install -r requirements.txt && rasa train
+    startCommand: rasa run --enable-api --cors "*" --host 0.0.0.0 --port $PORT
+
+  - type: web
+    name: mindbridge-rasa-actions
+    runtime: python
+    rootDir: backend/rasa
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: rasa run actions --host 0.0.0.0 --port $PORT

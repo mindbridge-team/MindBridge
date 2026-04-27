@@ -48,7 +48,7 @@ if not ALLOWED_HOSTS:
 
 
 #Rasa URL
-RASA_URL = os.getenv("RASA_URL", "http://localhost:5005")
+RASA_URL = os.getenv("RASA_URL")
 
 # Application definition
 INSTALLED_APPS = [
