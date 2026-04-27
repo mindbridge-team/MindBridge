@@ -58,7 +58,7 @@ services:
     name: mindbridge-rasa
     runtime: python
     rootDir: backend/rasa
-    plan: free
+    plan: starter
     buildCommand: pip install -r requirements.txt && rasa train
     startCommand: rasa run --enable-api --cors "*" -i 0.0.0.0 -p $PORT
 
