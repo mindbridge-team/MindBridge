@@ -21,14 +21,14 @@ rules:
 - rule: Handling website help
   steps:
     - intent: ask_website_help
-    - action: action_website_help
+    - action: action_patient_assistant
 
 - rule: Handling appointments
   steps:
     - intent: ask_appointment_help
-    - action: action_appointment_help
+    - action: action_patient_assistant
 
 - rule: Handling reminders
   steps:
     - intent: ask_reminder_help
-    - action: action_reminder_help"
+    - action: action_patient_assistant

@@ -20,6 +20,35 @@ nlu:
     - What's up
     - how's it going
 
+- intent: crisis
+  examples: |
+    - I want to kill myself
+    - I am thinking about suicide
+    - I feel suicidal
+    - I want to end my life
+    - I might hurt myself
+    - I want to hurt myself
+    - I am going to hurt myself
+    - I have been thinking about self harm
+    - I want to self harm
+    - I might self-harm
+    - I want to cut myself
+    - I feel like cutting myself
+    - I want to die
+    - I don't want to live
+    - I dont want to live anymore
+    - I might overdose
+    - I want to overdose
+    - I am scared I might hurt someone
+    - I want to hurt someone
+    - I might harm someone
+    - I am going to hurt someone
+    - I feel like hurting someone
+    - I do not feel safe with myself
+    - I feel like I might do something bad
+    - I am afraid I will hurt myself
+    - I am afraid I will hurt someone
+    
 - intent: ask_website_help
   examples: |
     - can you help me use the website
