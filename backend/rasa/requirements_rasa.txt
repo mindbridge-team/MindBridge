@@ -1,4 +1,5 @@
 #Rasa
+rasa
 rasa-sdk
 python-dotenv>=1.0,<2.0
 requests
