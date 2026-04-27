@@ -1,5 +1,5 @@
 #Rasa
-rasa
-rasa-sdk
+rasa>=3.6,<3.7
+rasa-sdk>=3.6,<3.7
 python-dotenv>=1.0,<2.0
 requests
