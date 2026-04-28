@@ -19,6 +19,27 @@ class ActionPatientAssistant(Action):
         user_text = (tracker.latest_message.get("text") or "").lower()
         intent: Optional[str] = tracker.latest_message.get("intent", {}).get("name")
 
+        def is_where_question(text: str) -> bool:
+            where_words = [
+                "where", "located", "find", "go to", "get to",
+                "open", "show me", "navigate", "navigation"
+            ]
+            return any(word in text for word in where_words)
+
+        def is_what_question(text: str) -> bool:
+            what_words = [
+                "what is", "what are", "what does", "explain",
+                "tell me about", "what can i do", "how does"
+            ]
+            return any(word in text for word in what_words)
+
+        def choose_response(location_responses, explanation_responses, general_responses):
+            if is_where_question(user_text):
+                return random.choice(location_responses)
+            if is_what_question(user_text):
+                return random.choice(explanation_responses)
+            return random.choice(general_responses)
+
         crisis_keywords = [
             "kill myself", "suicide", "end my life", "hurt myself",
             "self harm", "self-harm", "cut myself", "i want to die",
@@ -32,122 +53,166 @@ class ActionPatientAssistant(Action):
             "I’m really sorry you’re feeling this way. I can’t provide emergency support, but you should contact a trusted person right now or call emergency services if you might hurt yourself or someone else. If you are in the U.S., you can call or text 988 for immediate crisis support.",
             "This sounds serious, and you deserve immediate help. Please reach out to someone you trust now, or call emergency services if there is any immediate danger. In the U.S., call or text 988 for the Suicide & Crisis Lifeline.",
             "I’m concerned about your safety. Please do not handle this alone. Contact a trusted person, local emergency services, or call/text 988 in the U.S. for crisis support.",
-            "I’m glad you said something. If there is any immediate danger, please call emergency services now or reach out to someone nearby who can stay with you. In the U.S., you can call or text 988.",
             "Your safety matters. I can’t handle emergencies, but you should contact a trusted person, emergency services, or 988 in the U.S. if you may hurt yourself or someone else.",
             "This sounds urgent. Please do not stay alone with this. Contact someone you trust right now, or call emergency services if there is immediate danger.",
-            "I’m sorry you’re dealing with this. If you might act on these thoughts, call emergency services or contact 988 in the U.S. right now.",
-            "I care about your safety. Please pause and reach out to a trusted person or crisis line immediately. In the U.S., call or text 988.",
             "If you feel unsafe, please get immediate help from a trusted person nearby, local emergency services, or 988 in the U.S.",
-            "This is more than I can safely support alone. Please contact emergency help or a crisis support line now if there is any chance you may hurt yourself or someone else.",
         ]
 
-        dashboard_responses = [
-            "The Dashboard is the main page after you log in. It gives you a quick overview of your mood, upcoming sessions, mood streak, quick links, and featured resources.",
-            "Dashboard is your home base in MindBridge. You can use it to quickly log your mood, book a session, and see important information.",
-            "You can find Dashboard on the left sidebar. It summarizes your main MindBridge activity in one place.",
-            "The Dashboard helps you quickly see what is happening in your account, like mood tracking, sessions, and helpful resources.",
-            "Think of the Dashboard as the main control center. It gives you quick access to the most important patient features.",
-            "If you are not sure where to start, go to Dashboard first. It usually shows shortcuts to mood tracking, booking, and resources.",
-            "Dashboard is useful when you want a quick check of your wellness activity without opening every page separately.",
-            "The Dashboard can show your current wellness overview, including recent mood activity and session-related information.",
-            "To get to Dashboard, use the left sidebar and click Dashboard. That page is meant to be your starting point.",
-            "Dashboard is the first page I would recommend checking because it connects you to the main patient tools.",
+        dashboard_location = [
+            "The Dashboard is on the left sidebar. Click **Dashboard** to return to your main overview page.",
+            "You can find Dashboard in the left navigation menu. It is usually the main page after you log in.",
+            "To open Dashboard, use the sidebar and select **Dashboard**.",
+            "Dashboard should be one of the main sidebar options, usually near the top.",
         ]
 
-        appointment_responses = [
-            "Appointments are handled through **Book Session** on the left sidebar. That is where you go to schedule or view session options.",
-            "To find appointments, click **Book Session** in the left menu. Your upcoming sessions may also appear on the Dashboard.",
-            "If you want to book or manage a counseling session, go to **Book Session** from the sidebar.",
-            "For sessions, click **Book Session** on the left side of the page. After booking, your upcoming session should show on the Dashboard.",
-            "The appointment feature is mainly for scheduling counseling sessions. In MindBridge, that is usually under **Book Session**.",
-            "Book Session is where patients can start the appointment process with a counselor or available provider.",
-            "If you are asking where appointments are located, look for **Book Session** in the sidebar.",
-            "If you are trying to schedule help, use **Book Session**. That page is for choosing or managing session times.",
-            "Appointments are not usually under Profile or Resources. The correct place is **Book Session**.",
+        dashboard_explanation = [
+            "The Dashboard is your main overview page. It shows things like mood activity, upcoming sessions, quick links, and featured resources.",
+            "Dashboard is your home base in MindBridge. It helps you quickly access mood tracking, booking, resources, and account activity.",
+            "The Dashboard summarizes your patient activity so you do not have to open every section separately.",
+            "Think of Dashboard as the control center for the patient side of MindBridge.",
+        ]
+
+        dashboard_general = dashboard_location + dashboard_explanation + [
+            "If you are not sure where to start, Dashboard is usually the best first page to check.",
+            "Dashboard connects you to the main patient tools like Book Session, Mood Tracker, Resources, and Profile.",
+        ]
+
+        appointment_location = [
+            "Appointments are under **Book Session** on the left sidebar.",
+            "To find appointments, click **Book Session** in the left menu.",
+            "If you want to schedule a counseling session, go to **Book Session** from the sidebar.",
+            "Appointment booking is handled through **Book Session**, not Profile or Resources.",
+        ]
+
+        appointment_explanation = [
+            "Appointments are counseling sessions that patients can schedule through the **Book Session** page.",
+            "The appointment feature is for booking, viewing, or managing sessions with a counselor or provider.",
+            "**Book Session** is the appointment area of MindBridge. It is where patients start the scheduling process.",
+            "Appointments help connect patients with support through scheduled sessions.",
+        ]
+
+        appointment_general = appointment_location + appointment_explanation + [
+            "After booking, your upcoming session may also appear on the Dashboard.",
             "Use **Book Session** whenever you want to set up a meeting, check scheduling options, or prepare for a counseling session.",
         ]
 
-        mood_responses = [
-            "Mood Tracker is where you can record how you are feeling. You can find it on the left sidebar under **Mood Tracker**.",
-            "The Mood Tracker helps you log your mood over time so you can notice patterns in stress, anxiety, sadness, or overall wellness.",
-            "To log your mood, click **Mood Tracker** from the sidebar. That page lets you record daily check-ins.",
-            "Mood tracking is useful because it helps you and your counselor understand how your emotions change over time.",
-            "If you want to check in or record how you feel, go to **Mood Tracker**.",
-            "The Mood Tracker is for daily or regular emotional check-ins. It can help you build a history of how you have been doing.",
-            "You can use Mood Tracker when you want to quickly save your current mood and reflect on changes later.",
-            "Mood Tracker is one of the main patient tools. It helps turn your feelings into a record you can review.",
+        mood_location = [
+            "Mood tracking is under **Mood Tracker** on the left sidebar.",
+            "To log your mood, click **Mood Tracker** from the sidebar.",
+            "You can access Mood Tracker from the left menu, and sometimes through a Dashboard quick link.",
+            "If you want to record how you feel, go to **Mood Tracker**.",
+        ]
+
+        mood_explanation = [
+            "Mood Tracker is where you record how you are feeling over time.",
+            "The Mood Tracker helps you notice patterns in stress, anxiety, sadness, or overall wellness.",
+            "Mood tracking is useful because it creates a history of your emotional check-ins.",
+            "The Mood Tracker is for daily or regular emotional check-ins.",
+        ]
+
+        mood_general = mood_location + mood_explanation + [
             "If you are feeling stressed, sad, anxious, or okay, Mood Tracker is where you can log that feeling.",
-            "You can access Mood Tracker from the sidebar or sometimes through a Dashboard quick link.",
+            "Mood Tracker can help you and a counselor better understand changes in your emotions over time.",
         ]
 
-        reminder_responses = [
-            "Reminders are meant to help you stay consistent with daily check-ins, appointment prep, and wellness routines.",
-            "If reminders are enabled, they may help you remember to log your mood, prepare for a session, or complete a check-in.",
-            "For reminders, look for reminder or notification settings. They are usually connected to check-ins or wellness habits.",
-            "Reminder support can help patients keep up with mood tracking and routine wellness activities.",
+        reminder_location = [
+            "If reminders are enabled, they should be in the reminders, notification, or settings area.",
+            "For reminders, check the reminder or notification settings in the app.",
+            "If your version has reminders, look for reminder settings connected to check-ins or wellness routines.",
+            "Reminder options may appear in settings or a reminders section depending on how your team built the page.",
+        ]
+
+        reminder_explanation = [
+            "Reminders are meant to help you stay consistent with mood check-ins, appointment prep, and wellness routines.",
             "A reminder is basically a nudge to help you return to the app and complete something important.",
-            "If you want help remembering check-ins, reminders are the feature to look for.",
-            "Reminders can be useful if you forget to log your mood or want a routine schedule.",
-            "MindBridge reminders are meant to support consistency, not replace a counselor or emergency support.",
-            "If you are asking where reminders are, check settings, notifications, or any reminder section your team has enabled.",
-            "Use reminders for things like mood logs, session preparation, and daily wellness routines.",
+            "Reminders can help you remember to log your mood or prepare for a session.",
+            "MindBridge reminders support consistency, but they do not replace counselor or emergency support.",
         ]
 
-        resource_responses = [
-            "Resources are support materials inside MindBridge. You can find them under **Resources** on the left sidebar.",
-            "The Resources page can include guides, articles, coping strategies, and other mental health support content.",
-            "To find resources, click **Resources** from the sidebar. Featured resources may also appear on your Dashboard.",
-            "Resources are helpful when you want support outside of a live counseling session.",
-            "The Resources page is where you can look for self-help material, wellness information, or coping tools.",
-            "If you want to read or learn about mental health support topics, go to **Resources**.",
-            "Resources are not the same as appointments. Resources are usually articles or tools you can use on your own.",
+        reminder_general = reminder_location + reminder_explanation + [
+            "Use reminders for things like mood logs, session preparation, and daily wellness routines.",
+            "Reminder support can help patients keep up with regular wellness habits.",
+        ]
+
+        resource_location = [
+            "Resources are under **Resources** on the left sidebar.",
+            "To find resources, click **Resources** from the sidebar.",
+            "Featured resources may also appear on your Dashboard, but the main page is **Resources**.",
+            "If you want support materials, go to the **Resources** page.",
+        ]
+
+        resource_explanation = [
+            "Resources are support materials inside MindBridge, like guides, articles, coping strategies, or wellness content.",
+            "The Resources page gives you mental health support material you can use outside of a live session.",
+            "Resources are not appointments. They are articles, guides, or tools you can review on your own.",
+            "Resources can help with stress management, grounding, coping strategies, and emotional wellness.",
+        ]
+
+        resource_general = resource_location + resource_explanation + [
             "Use **Resources** when you want extra support material between sessions.",
-            "Resources can help with things like stress management, grounding, coping strategies, and emotional wellness.",
             "If you are unsure what to do next, Resources can be a good place to find helpful mental health information.",
         ]
 
-        profile_responses = [
-            "Your Profile is where your account information and personal details should be stored. You can find it on the left sidebar.",
+        profile_location = [
+            "Your Profile is on the left sidebar under **Profile**.",
             "To check your account information, click **Profile** from the sidebar.",
-            "Profile is the place to review your saved user information and personal details.",
+            "If you are looking for account details, go to **Profile**.",
+            "Profile should be in the main sidebar with Dashboard, Book Session, Mood Tracker, Resources, and Community.",
+        ]
+
+        profile_explanation = [
+            "Profile is where your account information and personal details should be stored.",
             "The Profile page is mainly for account-related information, not booking or mood tracking.",
-            "If you need to check your name, account details, or saved information, go to **Profile**.",
             "Profile helps you manage the personal side of your MindBridge account.",
+            "Profile is different from Dashboard. Dashboard is your overview, while Profile is your account details.",
+        ]
+
+        profile_general = profile_location + profile_explanation + [
             "If something about your account looks wrong, Profile is the first place I would check.",
             "You can use Profile to review your information after logging in.",
-            "Profile is different from Dashboard. Dashboard is your overview, while Profile is your account details.",
-            "If you are asking where your account info is, it should be under **Profile**.",
         ]
 
-        community_responses = [
-            "Community is a patient support area for peer or group-based connection features, if your team has enabled them.",
-            "The Community page is meant for connection beyond one-on-one sessions. You can find it on the left sidebar.",
-            "Community may include shared support spaces, peer interaction, or group-based wellness features depending on what is active in your version.",
+        community_location = [
+            "The Community page is on the left sidebar. Click **Community** to open it.",
+            "You can find Community in the left navigation menu with Dashboard, Book Session, Mood Tracker, Resources, and Profile.",
+            "To get to Community, use the sidebar and select **Community**.",
             "If you are looking for the Community page, check the left sidebar and click **Community**.",
-            "Community is different from Book Session. Book Session is for appointments, while Community is for broader support or connection.",
-            "The Community feature is meant to help patients feel less isolated by offering a space for support or shared connection.",
-            "If Community is enabled, it can be used for peer support or group-style interaction inside MindBridge.",
-            "Community is not emergency support, but it may help users connect with supportive spaces in the platform.",
-            "Use Community when you want support beyond resources or individual appointments.",
-            "The Community page is one of the main patient sections, along with Dashboard, Book Session, Mood Tracker, Resources, and Profile.",
         ]
 
-        login_responses = [
-            "If you are already signed in, you can use the sidebar to navigate. If something looks wrong, try logging out and back in.",
-            "For login issues, check that you are signed in. If pages are not loading, logging out and back in may refresh your session.",
-            "If your account information is not showing correctly, try signing out and signing in again.",
-            "Login is how you access your MindBridge account. After logging in, you should see the patient dashboard and sidebar.",
-            "If you cannot access patient features, you may need to log in again.",
-            "If login fails, double-check your email, username, or password depending on how the app is set up.",
-            "If you recently registered, try signing in with the same account information you used during registration.",
+        community_explanation = [
+            "Community is a patient support area for peer or group-based connection features, if your team has enabled them.",
+            "The Community page is meant for support and connection beyond one-on-one sessions.",
+            "Community may include shared support spaces, peer interaction, or group-based wellness features depending on what is active.",
+            "Community is different from Book Session. Book Session is for appointments, while Community is for broader support or connection.",
+        ]
+
+        community_general = community_location + community_explanation + [
+            "Community can help patients feel less isolated by offering a space for support or shared connection.",
+            "Community is not emergency support, but it may help users connect with supportive spaces in the platform.",
+        ]
+
+        login_location = [
+            "Login is usually on the main sign-in page before entering the patient dashboard.",
+            "If you are logged out, use the login page to access your MindBridge account.",
+            "After logging in, you should see the patient dashboard and sidebar.",
+            "If you need to sign out, look for the logout option in the account or navigation area.",
+        ]
+
+        login_explanation = [
+            "Login is how you access your MindBridge account and patient features.",
+            "Authentication protects your account so only you can access your saved information.",
+            "If your session expires, you may need to log in again.",
+            "If login fails, it may be caused by wrong credentials, expired session, or the backend not responding.",
+        ]
+
+        login_general = login_location + login_explanation + [
             "If the site looks stuck after login, refresh the page or sign out and back in.",
-            "Authentication issues are usually related to expired sessions, wrong credentials, or the backend not responding.",
             "Once you are logged in, you should be able to access Dashboard, Book Session, Mood Tracker, Resources, Community, and Profile.",
         ]
 
         navigation_responses = [
             "You can use the left sidebar to move around MindBridge. The main pages are Dashboard, Book Session, Mood Tracker, Community, Resources, and Profile.",
-            "The left menu is your main navigation. Dashboard is your overview, Book Session is for appointments, Mood Tracker is for mood logs, Resources has support content, and Profile has account info.",
+            "The left menu is your main navigation. Dashboard is your overview, Book Session is for appointments, Mood Tracker is for mood logs, Resources has support content, Community is for support connection, and Profile has account info.",
             "I can help you navigate MindBridge. Tell me the page you want, like Book Session, Mood Tracker, Resources, Profile, Community, or Dashboard.",
             "The sidebar has Dashboard, Book Session, Mood Tracker, Community, Resources, and Profile. Pick the feature you need and I’ll point you there.",
             "If you are looking for a feature, start with the left sidebar. Most patient tools are listed there.",
@@ -183,7 +248,9 @@ class ActionPatientAssistant(Action):
                 "therapy", "therapist"
             ]
         ):
-            dispatcher.utter_message(text=random.choice(appointment_responses))
+            dispatcher.utter_message(
+                text=choose_response(appointment_location, appointment_explanation, appointment_general)
+            )
 
         elif intent in ["ask_mood_help", "ask_mood", "mood_help"] or any(
             x in user_text for x in [
@@ -192,7 +259,9 @@ class ActionPatientAssistant(Action):
                 "check-in", "streak"
             ]
         ):
-            dispatcher.utter_message(text=random.choice(mood_responses))
+            dispatcher.utter_message(
+                text=choose_response(mood_location, mood_explanation, mood_general)
+            )
 
         elif intent in ["ask_resources_help", "ask_resources", "resource_help"] or any(
             x in user_text for x in [
@@ -201,7 +270,9 @@ class ActionPatientAssistant(Action):
                 "self-help"
             ]
         ):
-            dispatcher.utter_message(text=random.choice(resource_responses))
+            dispatcher.utter_message(
+                text=choose_response(resource_location, resource_explanation, resource_general)
+            )
 
         elif intent in ["ask_profile_help", "ask_profile", "profile_help"] or any(
             x in user_text for x in [
@@ -209,7 +280,9 @@ class ActionPatientAssistant(Action):
                 "personal information", "my info"
             ]
         ):
-            dispatcher.utter_message(text=random.choice(profile_responses))
+            dispatcher.utter_message(
+                text=choose_response(profile_location, profile_explanation, profile_general)
+            )
 
         elif intent in ["ask_community_help", "ask_community", "community_help"] or any(
             x in user_text for x in [
@@ -217,14 +290,18 @@ class ActionPatientAssistant(Action):
                 "community page", "what is community"
             ]
         ):
-            dispatcher.utter_message(text=random.choice(community_responses))
+            dispatcher.utter_message(
+                text=choose_response(community_location, community_explanation, community_general)
+            )
 
         elif intent in ["ask_dashboard_help", "ask_dashboard", "dashboard_help"] or any(
             x in user_text for x in [
                 "dashboard", "home page", "homepage", "main page", "overview"
             ]
         ):
-            dispatcher.utter_message(text=random.choice(dashboard_responses))
+            dispatcher.utter_message(
+                text=choose_response(dashboard_location, dashboard_explanation, dashboard_general)
+            )
 
         elif intent in ["ask_reminder_help", "ask_reminder", "reminder_help"] or any(
             x in user_text for x in [
@@ -232,7 +309,9 @@ class ActionPatientAssistant(Action):
                 "notifications", "daily check"
             ]
         ):
-            dispatcher.utter_message(text=random.choice(reminder_responses))
+            dispatcher.utter_message(
+                text=choose_response(reminder_location, reminder_explanation, reminder_general)
+            )
 
         elif intent in ["ask_login_help", "ask_login", "login_help"] or any(
             x in user_text for x in [
@@ -240,7 +319,9 @@ class ActionPatientAssistant(Action):
                 "sign out", "signed in", "password"
             ]
         ):
-            dispatcher.utter_message(text=random.choice(login_responses))
+            dispatcher.utter_message(
+                text=choose_response(login_location, login_explanation, login_general)
+            )
 
         elif intent in ["ask_website_help", "ask_navigation", "website_help"] or any(
             x in user_text for x in [
@@ -255,8 +336,8 @@ class ActionPatientAssistant(Action):
             dispatcher.utter_message(text=random.choice(support_responses))
 
         return []
-
-
+    
+    
 class ActionChatCompletion(Action):
     def name(self) -> Text:
         return "action_chat_completion"
