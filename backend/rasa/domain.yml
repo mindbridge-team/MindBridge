@@ -12,6 +12,8 @@ intents:
   - ask_website_help
   - ask_appointment_help
   - ask_reminder_help
+  - crisis
+  - gratitude
 
 responses: {}
 

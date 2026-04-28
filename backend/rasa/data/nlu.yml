@@ -20,6 +20,36 @@ nlu:
     - What's up
     - how's it going
 
+- intent: gratitude
+  examples: |
+    - thanks
+    - thank you
+    - thx
+    - ty
+    - thanks a lot
+    - thank you so much
+    - appreciate it
+    - I appreciate it
+    - I appreciate your help
+    - thanks for the help
+    - thank you for helping
+    - that helped
+    - that was helpful
+    - helpful, thanks
+    - ok thanks
+    - okay thank you
+    - cool thanks
+    - great thanks
+    - awesome thanks
+    - nice thanks
+    - perfect thanks
+    - got it thanks
+    - gotcha thanks
+    - thank u
+    - tysm
+    - thanks chatbot
+    - thanks assistant
+
 - intent: crisis
   examples: |
     - I want to kill myself
@@ -104,6 +134,48 @@ nlu:
     - which car is faster
     - car brand
     - should i buy a tesla
+    - what is the weather like
+    - what's the weather like
+    - is it raining today
+    - tell me the weather
+    - what time is it
+    - what day is it
+    - tell me a joke
+    - tell me something funny
+    - who won the game
+    - what is the score
+    - what is the news today
+    - give me the latest news
+    - what is bitcoin
+    - how much is bitcoin
+    - what stock should I buy
+    - give me investment advice
+    - can you do my homework
+    - write my essay
+    - solve my math homework
+    - what is 2 plus 2
+    - who is the president
+    - play music
+    - open youtube
+    - order me food
+    - book me a flight
+    - buy something for me
+    - what is your favorite movie
+    - who created you
+    - are you human
+    - are you real
+    - can you code a game
+    - help me hack someone
+    - give me someone’s password
+    - can you make money for me
+    - tell me about sports
+    - tell me about politics
+    - what should I eat
+    - what car should I buy
+    - can you diagnose me
+    - prescribe me medication
+    - should I take medicine
+    - can you replace my counselor
 
 - intent: goodbye
   examples: |

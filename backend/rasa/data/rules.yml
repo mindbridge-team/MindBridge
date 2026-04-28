@@ -8,6 +8,11 @@ rules:
     - intent: goodbye
     - action: action_chat_completion
 
+- rule: crisis
+  steps:
+    - intent: crisis
+    - action: action_patient_assistant
+
 - rule: Handling greet
   steps:
     - intent: greet
@@ -32,3 +37,13 @@ rules:
   steps:
     - intent: ask_reminder_help
     - action: action_patient_assistant
+
+- rule: Fallback to patient assistant
+  steps:
+    - intent: nlu_fallback
+    - action: action_patient_assistant
+
+- rule: Handling gratitude
+  steps:
+    - intent: gratitude
+    - action: action_chat_completion

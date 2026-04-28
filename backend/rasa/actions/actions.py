@@ -19,6 +19,15 @@ class ActionPatientAssistant(Action):
         user_text = (tracker.latest_message.get("text") or "").lower()
         intent: Optional[str] = tracker.latest_message.get("intent", {}).get("name")
 
+        crisis_keywords = [
+            "kill myself", "suicide", "end my life", "hurt myself",
+            "self harm", "self-harm", "cut myself", "i want to die",
+            "i don't want to live", "i dont want to live", "overdose",
+            "hurt someone", "harm someone", "i want to hurt someone",
+            "i might hurt someone", "going to hurt someone",
+            "i want to hurt myself", "i might hurt myself"
+        ]
+
         crisis_responses = [
             "I’m really sorry you’re feeling this way. I can’t provide emergency support, but you should contact a trusted person right now or call emergency services if you might hurt yourself or someone else. If you are in the U.S., you can call or text 988 for immediate crisis support.",
             "This sounds serious, and you deserve immediate help. Please reach out to someone you trust now, or call emergency services if there is any immediate danger. In the U.S., call or text 988 for the Suicide & Crisis Lifeline.",
@@ -94,62 +103,57 @@ class ActionPatientAssistant(Action):
             "I’m not a replacement for a counselor, but I can help you reflect, calm down, and decide what next step might help.",
         ]
 
-        # Most specific / safety first
-        if intent == "crisis":
+        if intent == "crisis" or any(word in user_text for word in crisis_keywords):
             dispatcher.utter_message(text=random.choice(crisis_responses))
+            return []
 
-        # Specific app sections before broad navigation words like "where"
-        elif intent in ["ask_appointment", "appointment_help"] or any(
+        elif intent in ["ask_appointment_help", "ask_appointment", "appointment_help"] or any(
             x in user_text for x in [
                 "appointment", "appointments", "appoint", "appoints",
-                "book", "booking", "book session",
-                "session", "sessions", "schedule", "scheduling",
-                "counselor", "counsellor", "therapy", "therapist"
+                "book", "booking", "book session", "session", "sessions",
+                "schedule", "scheduling", "counselor", "counsellor",
+                "therapy", "therapist"
             ]
         ):
             dispatcher.utter_message(text=random.choice(appointment_responses))
 
-        elif intent in ["ask_mood", "mood_help"] or any(
+        elif intent in ["ask_mood_help", "ask_mood", "mood_help"] or any(
             x in user_text for x in [
-                "mood", "moods", "mood tracker", "feeling",
-                "feelings", "tracker", "log mood", "log my mood",
-                "check in", "check-in", "streak"
+                "mood", "moods", "mood tracker", "feeling", "feelings",
+                "tracker", "log mood", "log my mood", "check in",
+                "check-in", "streak"
             ]
         ):
             dispatcher.utter_message(text=random.choice(mood_responses))
 
-        elif intent in ["ask_resources", "resource_help"] or any(
+        elif intent in ["ask_resources_help", "ask_resources", "resource_help"] or any(
             x in user_text for x in [
-                "resource", "resources", "article", "articles",
-                "guide", "guides", "material", "materials",
-                "coping", "self help", "self-help"
+                "resource", "resources", "article", "articles", "guide",
+                "guides", "material", "materials", "coping", "self help",
+                "self-help"
             ]
         ):
             dispatcher.utter_message(text=random.choice(resource_responses))
 
-        elif intent in ["ask_profile", "profile_help"] or any(
+        elif intent in ["ask_profile_help", "ask_profile", "profile_help"] or any(
             x in user_text for x in [
-                "profile", "account", "settings",
-                "personal info", "personal information", "my info"
+                "profile", "account", "settings", "personal info",
+                "personal information", "my info"
             ]
         ):
             dispatcher.utter_message(text=random.choice(profile_responses))
 
-        elif intent in ["ask_community", "community_help"] or any(
-            x in user_text for x in [
-                "community", "group", "peer", "support group"
-            ]
+        elif intent in ["ask_community_help", "ask_community", "community_help"] or any(
+            x in user_text for x in ["community", "group", "peer", "support group"]
         ):
             dispatcher.utter_message(text=random.choice(community_responses))
 
-        elif intent in ["ask_dashboard", "dashboard_help"] or any(
-            x in user_text for x in [
-                "dashboard", "home page", "homepage", "main page", "overview"
-            ]
+        elif intent in ["ask_dashboard_help", "ask_dashboard", "dashboard_help"] or any(
+            x in user_text for x in ["dashboard", "home page", "homepage", "main page", "overview"]
         ):
             dispatcher.utter_message(text=random.choice(dashboard_responses))
 
-        elif intent in ["ask_reminder", "reminder_help"] or any(
+        elif intent in ["ask_reminder_help", "ask_reminder", "reminder_help"] or any(
             x in user_text for x in [
                 "reminder", "reminders", "remind", "notification",
                 "notifications", "daily check"
@@ -157,20 +161,19 @@ class ActionPatientAssistant(Action):
         ):
             dispatcher.utter_message(text=random.choice(reminder_responses))
 
-        elif intent in ["ask_login", "login_help"] or any(
+        elif intent in ["ask_login_help", "ask_login", "login_help"] or any(
             x in user_text for x in [
-                "login", "log in", "logout", "log out",
-                "sign in", "sign out", "signed in", "password"
+                "login", "log in", "logout", "log out", "sign in",
+                "sign out", "signed in", "password"
             ]
         ):
             dispatcher.utter_message(text=random.choice(login_responses))
 
-        # Broad navigation comes near the end
-        elif intent in ["ask_navigation", "website_help"] or any(
+        elif intent in ["ask_website_help", "ask_navigation", "website_help"] or any(
             x in user_text for x in [
-                "where", "navigate", "navigation", "find",
-                "page", "sidebar", "menu", "how do i use",
-                "how do i get to", "where do i go"
+                "where", "navigate", "navigation", "find", "page",
+                "sidebar", "menu", "how do i use", "how do i get to",
+                "where do i go"
             ]
         ):
             dispatcher.utter_message(text=random.choice(navigation_responses))
@@ -196,12 +199,15 @@ class ActionChatCompletion(Action):
 
         out_of_scope = [
             "I’m not fully sure how to help with that yet, but I can support you with stress, anxiety, mood, and general wellness check-ins.",
-            "That’s a little outside what I’m built for right now, but I can still help with emotional support, coping ideas, and mental wellness topics.",
-            "I may not have the best answer for that yet. I’m better at helping with mood support, stress, anxiety, and simple wellness guidance.",
+            "That’s a little outside what I’m built for right now, but I can still help with emotional support, coping ideas, and MindBridge navigation.",
+            "I may not have the best answer for that yet. I’m better at helping with mood support, stress, anxiety, appointments, and resources.",
             "I’m still learning that area, but I can help with mental health support, calming strategies, and check-in style conversations.",
-            "That topic is a bit beyond my current scope, but I can help you talk through stress, anxious feelings, sadness, or coping techniques.",
+            "That topic is outside my current scope, but I can help you find MindBridge features like Book Session, Mood Tracker, Resources, or Profile.",
             "I don’t have a strong answer for that right now, though I can help with supportive conversations around emotions and wellness.",
-            "I’m not the best fit for that question yet, but I can help with stress relief ideas, grounding exercises, and general emotional support.",
+            "I’m not the best fit for that question, but I can help with stress relief ideas, grounding exercises, and general emotional support.",
+            "I’m mainly here for MindBridge support and wellness guidance. Try asking about appointments, mood tracking, resources, or reminders.",
+            "I can’t really help with that topic, but I can help you use MindBridge or talk through how you’re feeling.",
+            "That’s outside my role as the MindBridge assistant. I can help with navigation, sessions, mood logs, and wellness support.",
         ]
 
         greet = [
@@ -216,6 +222,13 @@ class ActionChatCompletion(Action):
             "You’re welcome. I’m here if you need help finding anything else.",
             "No problem. I’m glad I could help.",
             "Anytime. You can ask me about appointments, mood tracking, resources, or your profile.",
+            "You’re welcome. I can also help you find Book Session, Mood Tracker, Resources, or Profile.",
+            "Glad I could help. Let me know what you want to find next.",
+            "Of course. I’m here to help you navigate MindBridge.",
+            "Happy to help. You can ask me about sessions, mood logs, reminders, or resources.",
+            "No worries. I’m here if you need more support.",
+            "You got it. I can help with anything on the MindBridge site.",
+            "Absolutely. I’m here whenever you need help using the platform.",
         ]
 
         if intent == "out_of_scope":
