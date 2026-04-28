@@ -43,6 +43,31 @@ rules:
     - intent: nlu_fallback
     - action: action_patient_assistant
 
+- rule: Handling community help
+  steps:
+    - intent: ask_community_help
+    - action: action_patient_assistant
+
+- rule: Handling dashboard help
+  steps:
+    - intent: ask_dashboard_help
+    - action: action_patient_assistant
+
+- rule: Handling resources
+  steps:
+    - intent: ask_resources_help
+    - action: action_patient_assistant
+
+- rule: Handling profile help
+  steps:
+    - intent: ask_profile_help
+    - action: action_patient_assistant
+
+- rule: Handling mood help
+  steps:
+    - intent: ask_mood_help
+    - action: action_patient_assistant
+
 - rule: Handling gratitude
   steps:
     - intent: gratitude

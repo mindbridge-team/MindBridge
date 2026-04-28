@@ -50,6 +50,55 @@ nlu:
     - thanks chatbot
     - thanks assistant
 
+- intent: ask_dashboard_help
+  examples: |
+    - what is the dashboard
+    - where is the dashboard
+    - what does dashboard show
+    - explain the dashboard
+    - how do I use the dashboard
+    - what is on my dashboard
+    - where is the main page
+    - what is the home page
+    - show me the dashboard
+    - dashboard page
+    - what does the dashboard do
+
+- intent: ask_mood_help
+  examples: |
+    - what is mood tracker
+    - what does mood tracker do
+    - where is mood tracker
+    - how do I log my mood
+    - how do I track my mood
+    - where can I record my feelings
+    - how do I check in
+    - mood tracker page
+    - explain mood tracking
+    - what is mood tracking for
+    - how do I add a mood
+    - where are my mood logs
+
+
+
+- intent: ask_community_help
+  examples: |
+    - what is the community page
+    - what does community mean
+    - where is community
+    - where can I find community
+    - how do I use community
+    - what is community for
+    - explain community
+    - tell me about the community page
+    - is community for group support
+    - is there a community section
+    - where are peer support features
+    - how do I find peer support
+    - what can I do in community
+    - community page
+    - show me community
+
 - intent: crisis
   examples: |
     - I want to kill myself
@@ -90,6 +139,17 @@ nlu:
     - where can I see my mood logs
     - how do I use mindbridge
     - I need help finding something on the site
+    - how do I use this website
+    - how do I navigate MindBridge
+    - where do I go
+    - help me navigate
+    - what pages are there
+    - show me around
+    - how does this app work
+    - what can I do here
+    - help with the website
+    - where is everything
+    - explain the site
 
 - intent: ask_appointment_help
   examples: |
@@ -102,6 +162,50 @@ nlu:
     - how do I cancel an appointment
     - can you help with appointments
     - I need help scheduling something
+    - where are appointments
+    - where is appointments
+    - where is appointment
+    - where is appoints
+    - how do I book a session
+    - how do I schedule an appointment
+    - where is book session
+    - what is book session
+    - how do appointments work
+    - explain appointments
+    - where can I meet a counselor
+    - how do I find a counselor
+    - appointment page
+    - booking page
+    - schedule session
+
+- intent: ask_resources_help
+  examples: |
+    - what are resources
+    - what is the resources page
+    - where are resources
+    - where is resources
+    - explain resources
+    - what can I find in resources
+    - where are articles
+    - where are guides
+    - where can I find coping tools
+    - resources page
+    - support materials
+    - self help resources
+
+- intent: ask_profile_help
+  examples: |
+    - what is profile
+    - where is my profile
+    - where is profile
+    - how do I check my account
+    - where is my account information
+    - explain profile
+    - profile page
+    - where is my personal information
+    - how do I view my info
+    - account page
+    - settings page
 
 - intent: ask_reminder_help
   examples: |
@@ -114,6 +218,17 @@ nlu:
     - how do I manage reminders
     - help me with reminders
     - I want daily check ins
+    - what are reminders
+    - where are reminders
+    - how do reminders work
+    - how do I set a reminder
+    - reminder page
+    - notification settings
+    - daily check in reminder
+    - remind me to check in
+    - wellness reminder
+    - mood reminder
+    - session reminder
 
 - intent: out_of_scope
   examples: |

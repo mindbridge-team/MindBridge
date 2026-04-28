@@ -14,7 +14,10 @@ intents:
   - ask_reminder_help
   - crisis
   - gratitude
-
+  - ask_community_help
+  - ask_dashboard_help
+  - ask_mood_help
+  - ask_resources_help
 responses: {}
 
 
