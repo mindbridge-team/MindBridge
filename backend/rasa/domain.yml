@@ -18,9 +18,7 @@ responses: {}
 
 actions:
   - action_chat_completion
-  - action_website_help
-  - action_appointment_help
-  - action_reminder_help"
+  - action_patient_assistant
 
 
 session_config:
