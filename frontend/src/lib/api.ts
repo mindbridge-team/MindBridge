@@ -67,6 +67,25 @@ export type Me = {
   role?: AppRole;
 };
 
+export type Notification = {
+  id: number;
+  user: number;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+};
+
+export async function getNotifications(
+  accessToken: string,
+  auth?: AuthOptions
+): Promise<Notification[]> {
+  return requestJson<Notification[]>('/api/communication/notifications/', accessToken, {
+    auth,
+    errorMessage: 'Failed to load notifications',
+  });
+}
+
 export type MoodEntry = {
   id: number;
   mood_value: number;
@@ -301,15 +320,6 @@ export type ChatMessage = {
   room: number;
   user: string;
   message_text: string;
-  created_at: string;
-};
-
-export type Notification = {
-  id: number;
-  user: number;
-  title: string;
-  message: string;
-  is_read: boolean;
   created_at: string;
 };
 
