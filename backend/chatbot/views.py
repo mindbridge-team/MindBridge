@@ -12,6 +12,10 @@ import requests
 def chatbot_message(request):
     message = request.data.get("message")
     sender = request.data.get("sender", "anonymous_user")
+    role = request.data.get("role", "patient")
+
+    if role not in ["patient", "counselor"]:
+        role = "patient"
 
     if not message:
         return Response(
@@ -23,11 +27,14 @@ def chatbot_message(request):
 
     payload = {
         "sender": sender,
-        "message": message
+        "message": message,
+        "metadata": {
+            "role": role
+        }
     }
 
     try:
-        rasa_response = requests.post(rasa_url, json=payload, timeout=10)
+        rasa_response = requests.post(rasa_url, json=payload, timeout=30)
         rasa_response.raise_for_status()
         rasa_data = rasa_response.json()
 
@@ -40,6 +47,7 @@ def chatbot_message(request):
             {
                 "success": True,
                 "sender": sender,
+                "role": role,
                 "messages": messages,
                 "raw": rasa_data
             },

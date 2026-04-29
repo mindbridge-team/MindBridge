@@ -62,7 +62,7 @@ export type Me = {
   id: number;
   username: string;
   email: string;
-  role: 'patient' | 'counsellor' | 'admin';
+  role: 'patient' | 'counselor' | 'admin';
 };
 
 export type MoodEntry = {
@@ -386,37 +386,34 @@ export async function sendRoomMessage(
   });
 }
 
-export async function getNotifications(
-  accessToken: string,
-  auth?: AuthOptions
-): Promise<Notification[]> {
-  return requestJson<Notification[]>('/api/communication/notifications/', accessToken, {
-    auth,
-    errorMessage: 'Failed to load notifications',
-  });
-}
+type AppRole = 'patient' | 'counsellor' | 'admin';
 
-type ChatbotReply = {
+export type ChatbotReply = {
   success: boolean;
   sender: string;
+  role?: 'patient' | 'counselor';
   messages: string[];
+  raw?: unknown;
 };
 
-export async function sendChatbotMessage(message: string, sender?: string): Promise<ChatbotReply> {
+export async function sendChatbotMessage(
+  message: string,
+  sender?: string,
+  role: AppRole = 'patient'
+): Promise<ChatbotReply> {
+  const chatbotRole = role === 'counsellor' || role === 'admin'
+    ? 'counselor'
+    : 'patient';
+
   const response = await fetch(`${API_BASE}/api/chatbot/message/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, sender }),
+    body: JSON.stringify({ message, sender, role: chatbotRole }),
   });
+
   if (!response.ok) {
-    const errorPayload = await response.json().catch(() => ({}));
-    const errorMessage = pickErrorText(errorPayload, ['error', 'detail']) || 'Failed to contact chatbot';
-    throw new Error(errorMessage);
+    throw new Error('Failed to send chatbot message');
   }
-  const payload = await response.json();
-  return {
-    success: Boolean(payload.success),
-    sender: String(payload.sender ?? 'anonymous_user'),
-    messages: Array.isArray(payload.messages) ? payload.messages.map(String) : [],
-  };
+
+  return response.json();
 }

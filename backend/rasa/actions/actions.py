@@ -16,6 +16,7 @@ class ActionPatientAssistant(Action):
         domain: Dict[Text, Any],
     ) -> List[Dict[Text, Any]]:
 
+        role = tracker.latest_message.get("metadata", {}).get("role", "patient")
         user_text = (tracker.latest_message.get("text") or "").lower()
         intent: Optional[str] = tracker.latest_message.get("intent", {}).get("name")
 
@@ -236,106 +237,138 @@ class ActionPatientAssistant(Action):
             "I can help with basic wellness support, grounding ideas, and finding the right MindBridge feature.",
         ]
 
-        if intent == "crisis" or any(word in user_text for word in crisis_keywords):
-            dispatcher.utter_message(text=random.choice(crisis_responses))
+        if role == "counselor":
+            counselor_responses = [
+                "I can help with counselor-side workflows like viewing your dashboard, checking appointments, reviewing assigned patients, managing availability, and finding notes.",
+                "For counselor tools, use the counselor dashboard to review upcoming sessions, assigned patients, availability, and session-related information.",
+                "I can guide you through counselor features, but I won’t provide clinical advice or make decisions about a patient’s care.",
+            ]
+
+            if any(x in user_text for x in ["appointment", "appointments", "schedule", "session", "sessions"]):
+                dispatcher.utter_message(
+                    text="On the counselor side, appointments are where you can review upcoming sessions and manage your schedule. Check the counselor dashboard or appointments section."
+                )
+            elif any(x in user_text for x in ["patient", "patients", "client", "clients"]):
+                dispatcher.utter_message(
+                    text="Patient information should be under the assigned patients or patient records area. Use it to review patient details, mood history, and appointment history if those features are enabled."
+                )
+            elif any(x in user_text for x in ["note", "notes", "session note", "documentation"]):
+                dispatcher.utter_message(
+                    text="Counselor notes are for session documentation or follow-up details if your team has enabled that feature. Notes should be handled carefully because they may contain sensitive information."
+                )
+            elif any(x in user_text for x in ["availability", "available", "hours", "time slots"]):
+                dispatcher.utter_message(
+                    text="Availability is where counselors can manage open time slots for sessions. If enabled, check the availability or schedule section."
+                )
+            elif any(x in user_text for x in ["dashboard", "home", "overview"]):
+                dispatcher.utter_message(
+                    text="The counselor dashboard is your main overview page. It should show upcoming sessions, assigned patients, and recent counselor-side activity."
+                )
+            else:
+                dispatcher.utter_message(text=random.choice(counselor_responses))
+
             return []
-
-        elif intent in ["ask_appointment_help", "ask_appointment", "appointment_help"] or any(
-            x in user_text for x in [
-                "appointment", "appointments", "appoint", "appoints",
-                "book", "booking", "book session", "session", "sessions",
-                "schedule", "scheduling", "counselor", "counsellor",
-                "therapy", "therapist"
-            ]
-        ):
-            dispatcher.utter_message(
-                text=choose_response(appointment_location, appointment_explanation, appointment_general)
-            )
-
-        elif intent in ["ask_mood_help", "ask_mood", "mood_help"] or any(
-            x in user_text for x in [
-                "mood", "moods", "mood tracker", "feeling", "feelings",
-                "tracker", "log mood", "log my mood", "check in",
-                "check-in", "streak"
-            ]
-        ):
-            dispatcher.utter_message(
-                text=choose_response(mood_location, mood_explanation, mood_general)
-            )
-
-        elif intent in ["ask_resources_help", "ask_resources", "resource_help"] or any(
-            x in user_text for x in [
-                "resource", "resources", "article", "articles", "guide",
-                "guides", "material", "materials", "coping", "self help",
-                "self-help"
-            ]
-        ):
-            dispatcher.utter_message(
-                text=choose_response(resource_location, resource_explanation, resource_general)
-            )
-
-        elif intent in ["ask_profile_help", "ask_profile", "profile_help"] or any(
-            x in user_text for x in [
-                "profile", "account", "settings", "personal info",
-                "personal information", "my info"
-            ]
-        ):
-            dispatcher.utter_message(
-                text=choose_response(profile_location, profile_explanation, profile_general)
-            )
-
-        elif intent in ["ask_community_help", "ask_community", "community_help"] or any(
-            x in user_text for x in [
-                "community", "group", "peer", "support group",
-                "community page", "what is community"
-            ]
-        ):
-            dispatcher.utter_message(
-                text=choose_response(community_location, community_explanation, community_general)
-            )
-
-        elif intent in ["ask_dashboard_help", "ask_dashboard", "dashboard_help"] or any(
-            x in user_text for x in [
-                "dashboard", "home page", "homepage", "main page", "overview"
-            ]
-        ):
-            dispatcher.utter_message(
-                text=choose_response(dashboard_location, dashboard_explanation, dashboard_general)
-            )
-
-        elif intent in ["ask_reminder_help", "ask_reminder", "reminder_help"] or any(
-            x in user_text for x in [
-                "reminder", "reminders", "remind", "notification",
-                "notifications", "daily check"
-            ]
-        ):
-            dispatcher.utter_message(
-                text=choose_response(reminder_location, reminder_explanation, reminder_general)
-            )
-
-        elif intent in ["ask_login_help", "ask_login", "login_help"] or any(
-            x in user_text for x in [
-                "login", "log in", "logout", "log out", "sign in",
-                "sign out", "signed in", "password"
-            ]
-        ):
-            dispatcher.utter_message(
-                text=choose_response(login_location, login_explanation, login_general)
-            )
-
-        elif intent in ["ask_website_help", "ask_navigation", "website_help"] or any(
-            x in user_text for x in [
-                "where", "navigate", "navigation", "find", "page",
-                "sidebar", "menu", "how do i use", "how do i get to",
-                "where do i go"
-            ]
-        ):
-            dispatcher.utter_message(text=random.choice(navigation_responses))
-
         else:
-            dispatcher.utter_message(text=random.choice(support_responses))
+            if intent == "crisis" or any(word in user_text for word in crisis_keywords):
+                dispatcher.utter_message(text=random.choice(crisis_responses))
+                return []
 
-        return []
+            elif intent in ["ask_appointment_help", "ask_appointment", "appointment_help"] or any(
+                x in user_text for x in [
+                    "appointment", "appointments", "appoint", "appoints",
+                    "book", "booking", "book session", "session", "sessions",
+                    "schedule", "scheduling", "counselor", "counsellor",
+                    "therapy", "therapist"
+                ]
+            ):
+                dispatcher.utter_message(
+                    text=choose_response(appointment_location, appointment_explanation, appointment_general)
+                )
+
+            elif intent in ["ask_mood_help", "ask_mood", "mood_help"] or any(
+                x in user_text for x in [
+                    "mood", "moods", "mood tracker", "feeling", "feelings",
+                    "tracker", "log mood", "log my mood", "check in",
+                    "check-in", "streak"
+                ]
+            ):
+                dispatcher.utter_message(
+                    text=choose_response(mood_location, mood_explanation, mood_general)
+                )
+
+            elif intent in ["ask_resources_help", "ask_resources", "resource_help"] or any(
+                x in user_text for x in [
+                    "resource", "resources", "article", "articles", "guide",
+                    "guides", "material", "materials", "coping", "self help",
+                    "self-help"
+                ]
+            ):
+                dispatcher.utter_message(
+                    text=choose_response(resource_location, resource_explanation, resource_general)
+                )
+
+            elif intent in ["ask_profile_help", "ask_profile", "profile_help"] or any(
+                x in user_text for x in [
+                    "profile", "account", "settings", "personal info",
+                    "personal information", "my info"
+                ]
+            ):
+                dispatcher.utter_message(
+                    text=choose_response(profile_location, profile_explanation, profile_general)
+                )
+
+            elif intent in ["ask_community_help", "ask_community", "community_help"] or any(
+                x in user_text for x in [
+                    "community", "group", "peer", "support group",
+                    "community page", "what is community"
+                ]
+            ):
+                dispatcher.utter_message(
+                    text=choose_response(community_location, community_explanation, community_general)
+                )
+
+            elif intent in ["ask_dashboard_help", "ask_dashboard", "dashboard_help"] or any(
+                x in user_text for x in [
+                    "dashboard", "home page", "homepage", "main page", "overview"
+                ]
+            ):
+                dispatcher.utter_message(
+                    text=choose_response(dashboard_location, dashboard_explanation, dashboard_general)
+                )
+
+            elif intent in ["ask_reminder_help", "ask_reminder", "reminder_help"] or any(
+                x in user_text for x in [
+                    "reminder", "reminders", "remind", "notification",
+                    "notifications", "daily check"
+                ]
+            ):
+                dispatcher.utter_message(
+                    text=choose_response(reminder_location, reminder_explanation, reminder_general)
+                )
+
+            elif intent in ["ask_login_help", "ask_login", "login_help"] or any(
+                x in user_text for x in [
+                    "login", "log in", "logout", "log out", "sign in",
+                    "sign out", "signed in", "password"
+                ]
+            ):
+                dispatcher.utter_message(
+                    text=choose_response(login_location, login_explanation, login_general)
+                )
+
+            elif intent in ["ask_website_help", "ask_navigation", "website_help"] or any(
+                x in user_text for x in [
+                    "where", "navigate", "navigation", "find", "page",
+                    "sidebar", "menu", "how do i use", "how do i get to",
+                    "where do i go"
+                ]
+            ):
+                dispatcher.utter_message(text=random.choice(navigation_responses))
+
+            else:
+                dispatcher.utter_message(text=random.choice(support_responses))
+
+            return []
     
     
 class ActionChatCompletion(Action):

@@ -26,10 +26,18 @@ Open http://localhost:5173 in your browser.
 See `backend/moods/README.md` for setup instructions.
 
 ## Ai Chatbot
+
+ngrok:
+Start ngrok
+- C:\Users\amall\OneDrive\Desktop\ngrok.exe http 5005
+
+copy link into new RASA_URL in render enviroment variable 
+wait for redeployment
+
 Rasa:
 activate 2 new venv in rasa folder: .\.venv\Scripts\Activate.ps1
-Terminal 1: rasa run actions
-Terminal 2: python -m rasa run --enable-api --cors "*"
+Terminal 1: rasa run actions --port 5055  
+Terminal 2: rasa run --enable-api --cors "*" --port 5005
 
 Run Django Server -> backend folder & venv:
 Terminal 3: python manage.py runserver
@@ -44,6 +52,12 @@ Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/chatbot/message/" `
   -Method Post `
   -ContentType "application/json" `
   -Body '{"message":"can you help me use the website","sender":"abhi"}' 
+
+Invoke-RestMethod `
+  -Uri "https://47dc-165-134-212-60.ngrok-free.app /webhooks/rest/webhook" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body '{"sender":"counselor_test","message":"where are my appointments","metadata":{"role":"counselor"}}'
 
 ## Tech Stack
 

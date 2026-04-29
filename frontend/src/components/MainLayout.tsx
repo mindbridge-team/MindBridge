@@ -22,11 +22,27 @@ import {
 
 const PRIMARY_BUTTON_CLASSES = `${PRIMARY_BUTTON_COLORS} h-8 text-xs`;
 
+type AppRole = 'patient' | 'counsellor' | 'admin';
+
+function normalizeRole(role?: string): AppRole {
+  if (role === 'counsellor' || role === 'counselor') {
+    return 'counsellor';
+  }
+
+  if (role === 'admin') {
+    return 'admin';
+  }
+
+  return 'patient';
+}
+
 export function MainLayout() {
   const { logout, me } = useAuth();
   const [chatOpen, setChatOpen] = useState(false);
-  const roleBadgeLabel = getRoleBadgeLabel(me?.role);
-  const navItems = buildNavItems(me?.role);
+  const userRole: AppRole = normalizeRole(me?.role);
+
+  const roleBadgeLabel = getRoleBadgeLabel(userRole);
+  const navItems = buildNavItems(userRole);
 
   return (
     <div className="flex h-[100dvh] min-h-0 w-full bg-background">
@@ -126,7 +142,11 @@ export function MainLayout() {
           <MobileBottomNavigation navItems={navItems} />
         </nav>
 
-        <ChatBubble open={chatOpen} onOpenChange={setChatOpen} />
+        <ChatBubble
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          role={userRole}
+        />
       </div>
     </div>
   );

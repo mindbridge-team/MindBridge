@@ -9,12 +9,15 @@ import { sendChatbotMessage } from '../lib/api';
 
 // Floating support chat:
 // open/close the panel and show a ready mount point for chat integration.
+type AppRole = 'patient' | 'counsellor' | 'admin';
+
 type ChatBubbleProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  role?: AppRole;
 };
 
-export function ChatBubble({ open, onOpenChange }: ChatBubbleProps) {
+export function ChatBubble({ open, onOpenChange, role = 'patient' }: ChatBubbleProps) {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'bot'; text: string }>>([]);
   const [loading, setLoading] = useState(false);
@@ -29,7 +32,7 @@ export function ChatBubble({ open, onOpenChange }: ChatBubbleProps) {
     setMessages((prev) => [...prev, { role: 'user', text }]);
     setInput('');
     try {
-      const reply = await sendChatbotMessage(text);
+      const reply = await sendChatbotMessage(text, undefined, role);
       const botMessages = reply.messages.length > 0 ? reply.messages : ['Thanks for your message.'];
       setMessages((prev) => [...prev, ...botMessages.map((m) => ({ role: 'bot' as const, text: m }))]);
     } catch (err) {
