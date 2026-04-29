@@ -58,11 +58,13 @@ export async function login(username: string, password: string) {
   return { access: authTokens.access, refresh: authTokens.refresh };
 }
 
+export type AppRole = 'patient' | 'counsellor' | 'admin';
+
 export type Me = {
   id: number;
   username: string;
-  email: string;
-  role: 'patient' | 'counselor' | 'admin';
+  email?: string;
+  role?: AppRole;
 };
 
 export type MoodEntry = {
@@ -385,8 +387,6 @@ export async function sendRoomMessage(
     errorKeys: ['detail', 'room', 'message_text'],
   });
 }
-
-type AppRole = 'patient' | 'counsellor' | 'admin';
 
 export type ChatbotReply = {
   success: boolean;
